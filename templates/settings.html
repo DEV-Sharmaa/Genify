@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Genify — Settings</title>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Segoe UI',Arial,sans-serif;background:#0A0A0F;color:#E2E8F0;min-height:100vh}
+        /* SIDEBAR */
+        .layout{display:flex;min-height:100vh}
+        .sidebar{width:240px;background:#0F0F1A;border-right:1px solid #1E1E2E;padding:20px 0;position:fixed;height:100vh;display:flex;flex-direction:column}
+        .sidebar-logo{display:flex;align-items:center;gap:10px;padding:0 20px 24px;border-bottom:1px solid #1E1E2E}
+        .sidebar-logo-icon{width:32px;height:32px;background:linear-gradient(135deg,#4361EE,#7B2FBE);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px}
+        .sidebar-logo-text{font-size:17px;font-weight:800;color:#fff}
+        .sidebar-nav{padding:16px 12px;flex:1}
+        .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:#8B8FA8;text-decoration:none;font-size:14px;font-weight:500;transition:all .2s;margin-bottom:4px}
+        .nav-item:hover{background:#1E1E2E;color:#fff}
+        .nav-item.active{background:#1E1E2E;color:#fff}
+        .nav-item.active .nav-dot{width:6px;height:6px;border-radius:50%;background:#4361EE;margin-left:auto}
+        .sidebar-bottom{padding:16px 12px;border-top:1px solid #1E1E2E}
+        .user-pill{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:#1E1E2E}
+        .user-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#4361EE,#7B2FBE);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
+        .user-name{font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .user-plan{font-size:11px;color:#8B8FA8}
+        /* MAIN */
+        .main{margin-left:240px;padding:40px;flex:1}
+        .page-title{font-size:24px;font-weight:800;color:#fff;letter-spacing:-0.5px;margin-bottom:6px}
+        .page-sub{font-size:14px;color:#8B8FA8;margin-bottom:32px}
+        .settings-section{background:#0F0F1A;border:1px solid #1E1E2E;border-radius:16px;padding:28px;margin-bottom:20px}
+        .section-title{font-size:16px;font-weight:700;color:#fff;margin-bottom:4px}
+        .section-desc{font-size:13px;color:#8B8FA8;margin-bottom:20px}
+        .field{margin-bottom:18px}
+        .field label{display:block;font-size:13px;font-weight:600;color:#8B8FA8;margin-bottom:6px}
+        .field input,.field select{width:100%;padding:10px 14px;background:#1A1A2E;border:1px solid #2D2D3D;border-radius:10px;color:#E2E8F0;font-size:14px;outline:none;transition:border .2s}
+        .field input:focus,.field select:focus{border-color:#4361EE}
+        .field input::placeholder{color:#4A4A5A}
+        .save-btn{padding:11px 24px;border-radius:10px;background:linear-gradient(135deg,#4361EE,#7B2FBE);color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer;transition:all .2s}
+        .save-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(67,97,238,0.4)}
+        .success-msg{display:none;color:#27AE60;font-size:13px;font-weight:600;margin-top:12px}
+        .danger-btn{padding:11px 24px;border-radius:10px;background:transparent;color:#EF4444;font-size:14px;font-weight:700;border:1.5px solid #EF4444;cursor:pointer;transition:all .2s}
+        .danger-btn:hover{background:#EF444422}
+        .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    </style>
+</head>
+<body>
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="sidebar-logo">
+            <div class="sidebar-logo-icon">📄</div>
+            <div class="sidebar-logo-text">Genify</div>
+        </div>
+        <div class="sidebar-nav">
+            <a href="/dashboard" class="nav-item">📄 Dashboard</a>
+            <a href="/profile" class="nav-item">👤 Profile</a>
+            <a href="/pricing" class="nav-item">💰 Pricing</a>
+            <a href="/settings" class="nav-item active">⚙️ Settings <span class="nav-dot"></span></a>
+            <a href="#" onclick="confirmLogout()" class="nav-item nav-danger">🚪 Logout</a>
+        </div>
+        <div class="sidebar-bottom">
+            <div class="user-pill">
+                <div class="user-avatar">{{ user.name[0] }}</div>
+                <div>
+                    <div class="user-name">{{ user.name }}</div>
+                    <div class="user-plan">{{ user.plan }} plan</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+        <div class="page-title">Settings</div>
+        <div class="page-sub">Customise your Paperly experience</div>
+
+        <!-- Default Paper Settings -->
+        <div class="settings-section">
+            <div class="section-title">Default Paper Settings</div>
+            <div class="section-desc">These will be pre-selected every time you generate a paper.</div>
+            <div class="grid2">
+                <div class="field">
+                    <label>Default Subject</label>
+                    <select id="default_subject">
+                        <option>Mathematics</option>
+                        <option>Science</option>
+                        <option>Social Science</option>
+                        <option>English</option>
+                        <option>Hindi</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Default Class</label>
+                    <select id="default_class">
+                        <option>Class 6</option>
+                        <option>Class 7</option>
+                        <option>Class 8</option>
+                        <option>Class 9</option>
+                        <option>Class 10</option>
+                    </select>
+                </div>
+            </div>
+            <div class="field">
+                <label>Default Language</label>
+                <select id="default_language">
+                    <option>English</option>
+                    <option>Hindi</option>
+                </select>
+            </div>
+            <button class="save-btn" onclick="saveSettings()">Save Settings</button>
+            <div class="success-msg" id="successMsg">✅ Settings saved successfully!</div>
+        </div>
+
+        <!-- Institute Settings -->
+        <div class="settings-section">
+            <div class="section-title">Institute Details</div>
+            <div class="section-desc">Your institute name will appear on generated papers.</div>
+            <div class="field">
+                <label>Institute Name</label>
+                <input type="text" id="institute_name" placeholder="e.g. Bright Future Coaching Centre">
+            </div>
+            <button class="save-btn" onclick="saveSettings()">Save</button>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="settings-section" style="border-color:#EF444433">
+            <div class="section-title" style="color:#EF4444">Danger Zone</div>
+            <div class="section-desc">These actions cannot be undone.</div>
+            <button class="danger-btn" onclick="if(confirm('Are you sure you want to logout?')) window.location.href='/logout'">
+                🚪 Logout from all devices
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function saveSettings() {
+    fetch('/save-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            default_subject:  document.getElementById('default_subject').value,
+            default_class:    document.getElementById('default_class').value,
+            default_language: document.getElementById('default_language').value,
+            institute_name:   document.getElementById('institute_name').value
+        })
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) {
+            const msg = document.getElementById('successMsg');
+            msg.style.display = 'block';
+            setTimeout(() => msg.style.display = 'none', 3000);
+        }
+    });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Genify — Dashboard</title>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Segoe UI',Arial,sans-serif;background:#0A0A0F;color:#E2E8F0;min-height:100vh}
+        .layout{display:flex;min-height:100vh}
+
+        /* ── SIDEBAR ── */
+        .sidebar{width:240px;background:#0F0F1A;border-right:1px solid #1E1E2E;padding:20px 0;position:fixed;height:100vh;display:flex;flex-direction:column;z-index:50}
+        .sidebar-logo{display:flex;align-items:center;gap:10px;padding:0 20px 24px;border-bottom:1px solid #1E1E2E}
+        .sidebar-logo-icon{width:32px;height:32px;background:linear-gradient(135deg,#4361EE,#7B2FBE);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px}
+        .sidebar-logo-text{font-size:17px;font-weight:800;color:#fff}
+        .sidebar-nav{padding:16px 12px;flex:1;display:flex;flex-direction:column;gap:4px}
+        .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:#8B8FA8;text-decoration:none;font-size:14px;font-weight:500;transition:all .2s}
+        .nav-item:hover{background:#1E1E2E;color:#fff}
+        .nav-item.active{background:#1E1E2E;color:#fff}
+        .nav-dot{width:6px;height:6px;border-radius:50%;background:#4361EE;margin-left:auto;flex-shrink:0}
+        .nav-danger{color:#EF4444!important}
+        .nav-danger:hover{background:#EF444411!important}
+        .sidebar-bottom{padding:16px 12px;border-top:1px solid #1E1E2E}
+        .user-pill{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:#1E1E2E}
+        .user-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#4361EE,#7B2FBE);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
+        .user-info-name{font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .user-info-plan{font-size:11px;color:#8B8FA8}
+
+        /* ── MAIN ── */
+        .main{margin-left:240px;flex:1;padding:40px;min-height:100vh}
+
+        /* ── TOPBAR ── */
+        .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+        .topbar-left h1{font-size:24px;font-weight:800;color:#fff;letter-spacing:-0.5px;margin-bottom:4px}
+        .topbar-left p{font-size:14px;color:#8B8FA8}
+        .plan-badge-pro{background:linear-gradient(135deg,#4361EE,#7B2FBE);color:#fff;font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px}
+        .plan-badge-free{background:#1E1E2E;border:1px solid #2D2D3D;color:#8B8FA8;font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px}
+
+        /* ── FREE LIMIT BAR ── */
+        .limit-bar{background:#1E1E2E;border:1px solid #2D2D3D;border-radius:12px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+        .limit-bar-left{display:flex;align-items:center;gap:10px}
+        .limit-bar-left span{font-size:13px;color:#8B8FA8}
+        .limit-bar-left strong{color:#E2E8F0}
+        .limit-progress{flex:1;height:6px;background:#0A0A0F;border-radius:3px;overflow:hidden;max-width:200px}
+        .limit-progress-fill{height:100%;background:linear-gradient(90deg,#4361EE,#7B2FBE);border-radius:3px;transition:width .3s}
+        .upgrade-btn-small{padding:7px 16px;border-radius:8px;background:linear-gradient(135deg,#4361EE,#7B2FBE);color:#fff;font-size:12px;font-weight:700;border:none;cursor:pointer;white-space:nowrap}
+
+        /* ── UPGRADE MODAL ── */
+        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center}
+        .modal-overlay.show{display:flex}
+        .modal{background:#0F0F1A;border:1px solid #2D2D3D;border-radius:20px;padding:40px;max-width:480px;width:90%;text-align:center}
+        .modal-icon{font-size:40px;margin-bottom:16px}
+        .modal h2{font-size:24px;font-weight:800;color:#fff;margin-bottom:8px;letter-spacing:-0.5px}
+        .modal p{font-size:14px;color:#8B8FA8;margin-bottom:24px;line-height:1.6}
+        .modal-features{text-align:left;background:#1A1A2E;border-radius:12px;padding:16px 20px;margin-bottom:24px;display:flex;flex-direction:column;gap:10px}
+        .modal-feature{display:flex;align-items:center;gap:10px;font-size:14px;color:#E2E8F0}
+        .modal-feature::before{content:'✓';color:#4361EE;font-weight:700;flex-shrink:0}
+        .modal-price{font-size:32px;font-weight:900;color:#fff;margin-bottom:4px}
+        .modal-price span{font-size:16px;color:#8B8FA8;font-weight:400}
+        .modal-whatsapp{width:100%;padding:14px;border-radius:12px;background:linear-gradient(135deg,#4361EE,#7B2FBE);color:#fff;font-size:15px;font-weight:800;border:none;cursor:pointer;margin-bottom:10px;transition:all .2s}
+        .modal-whatsapp:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(67,97,238,0.4)}
+        .modal-close{background:transparent;border:1px solid #2D2D3D;color:#8B8FA8;padding:10px;border-radius:10px;font-size:14px;cursor:pointer;width:100%}
+
+        /* ── STATS ── */
+        .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+        .stat-card{background:#0F0F1A;border:1px solid #1E1E2E;border-radius:14px;padding:20px;display:flex;align-items:center;gap:14px}
+        .stat-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+        .stat-icon.blue{background:#4361EE22}
+        .stat-icon.purple{background:#7B2FBE22}
+        .stat-icon.green{background:#27AE6022}
+        .stat-num{font-size:22px;font-weight:900;color:#fff;line-height:1}
+        .stat-label{font-size:12px;color:#8B8FA8;margin-top:3px}
+
+        /* ── CARD ── */
+        .card{background:#0F0F1A;border:1px solid #1E1E2E;border-radius:16px;padding:24px;margin-bottom:16px}
+        .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+        .card-title{font-size:14px;font-weight:700;color:#fff}
+        .card-sub{font-size:12px;color:#8B8FA8;margin-top:2px}
+        .step-badge{background:#4361EE22;color:#4361EE;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;border:1px solid #4361EE44}
+        .pro-only-badge{background:#7B2FBE22;color:#A855F7;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;border:1px solid #7B2FBE44}
+
+        /* ── UPLOAD ── */
+        .upload-zone{border:1.5px dashed #2D2D3D;border-radius:12px;padding:28px;text-align:center;cursor:pointer;background:#0A0A0F;transition:all .2s}
+        .upload-zone:hover{border-color:#4361EE;background:#4361EE08}
+        .upload-zone.done{border-color:#27AE60;background:#27AE6008}
+        .upload-icon{font-size:30px;margin-bottom:10px}
+        .upload-title{font-size:15px;font-weight:600;color:#E2E8F0;margin-bottom:4px}
+        .upload-title.done{color:#27AE60}
+        .upload-sub{font-size:13px;color:#8B8FA8}
+        .remove-link{color:#EF4444;font-size:12px;cursor:pointer;margin-top:4px;display:inline-block;text-decoration:underline}
+
+        /* ── GRID ── */
+        .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+        /* ── FORM ── */
+        .field-label{display:block;font-size:12px;font-weight:600;color:#8B8FA8;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.4px}
+        select{width:100%;padding:10px 12px;background:#1A1A2E;border:1px solid #2D2D3D;border-radius:10px;color:#E2E8F0;font-size:14px;outline:none;transition:border .2s;cursor:pointer}
+        select:focus{border-color:#4361EE}
+        select option{background:#1A1A2E}
+        select:disabled{opacity:0.5;cursor:not-allowed}
+
+        /* ── DIFFICULTY ── */
+        .diff-row{display:flex;gap:8px;margin-top:4px}
+        .diff-btn{flex:1;padding:9px;border-radius:9px;border:1px solid #2D2D3D;background:#1A1A2E;color:#8B8FA8;font-weight:600;font-size:13px;cursor:pointer;transition:all .15s}
+        .diff-btn.easy{border-color:#27AE60;background:#27AE6018;color:#27AE60}
+        .diff-btn.medium{border-color:#F59E0B;background:#F59E0B18;color:#F59E0B}
+        .diff-btn.hard{border-color:#EF4444;background:#EF444418;color:#EF4444}
+
+        /* ── MARKS ── */
+        .marks-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+        .marks-val{background:linear-gradient(135deg,#4361EE,#7B2FBE);color:#fff;font-size:13px;font-weight:700;padding:2px 10px;border-radius:8px}
+        input[type=range]{width:100%;accent-color:#4361EE;height:4px}
+        .marks-range{display:flex;justify-content:space-between;font-size:11px;color:#4A4A6A;margin-top:4px}
+
+        /* ── LANGUAGE ── */
+        .lang-row{display:flex;gap:8px;margin-top:4px}
+        .lang-btn{flex:1;padding:9px;border-radius:9px;border:1px solid #2D2D3D;background:#1A1A2E;color:#8B8FA8;font-weight:600;font-size:13px;cursor:pointer;transition:all .15s;position:relative}
+        .lang-btn.active{border-color:#4361EE;background:#4361EE18;color:#4361EE}
+        .lang-btn.locked{opacity:0.5;cursor:not-allowed}
+        .lock-tag{font-size:10px;color:#A855F7;margin-left:4px}
+
+        /* ── SUMMARY ── */
+        .summary{background:#1E1E2E;border:1px solid #2D2D3D;border-radius:10px;padding:10px 16px;font-size:13px;color:#8B8FA8;text-align:center;margin-bottom:16px}
+        .summary span{color:#4361EE;font-weight:600}
+
+        /* ── GENERATE BTN ── */
+        .gen-btn{width:100%;padding:14px;border-radius:12px;border:none;background:linear-gradient(135deg,#4361EE,#7B2FBE);color:#fff;font-size:15px;font-weight:800;cursor:pointer;transition:all .2s;box-shadow:0 4px 18px rgba(67,97,238,0.3)}
+        .gen-btn:disabled{background:#1E1E2E;color:#4A4A6A;cursor:not-allowed;box-shadow:none}
+        .gen-btn:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(67,97,238,0.4)}
+        .gen-hint{text-align:center;font-size:12px;color:#4A4A6A;margin-top:8px}
+
+        /* ── PROGRESS ── */
+        .progress-wrap{display:none;margin-top:12px}
+        .progress-bar{width:100%;height:4px;background:#1E1E2E;border-radius:2px;overflow:hidden}
+        .progress-fill{height:100%;background:linear-gradient(90deg,#4361EE,#7B2FBE);border-radius:2px;transition:width .3s;width:0%}
+        .progress-text{font-size:12px;color:#8B8FA8;text-align:center;margin-top:8px}
+
+        /* ── ERROR ── */
+        .error-box{background:#EF444411;border:1px solid #EF444433;border-radius:10px;padding:12px 16px;color:#EF4444;font-size:13px;margin-bottom:14px;display:none}
+
+        /* ── RESULT ── */
+        .result-section{display:none;margin-top:8px}
+        .success-bar{background:#27AE6011;border:1px solid #27AE6033;border-radius:12px;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+        .success-bar span{font-weight:700;color:#27AE60;font-size:14px}
+        .action-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+        .action-btn{padding:9px 18px;border-radius:9px;border:1px solid #2D2D3D;background:#1A1A2E;color:#E2E8F0;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+        .action-btn:hover{background:#1E1E2E;border-color:#4361EE;color:#4361EE}
+        .action-btn.copy-done{border-color:#27AE60;color:#27AE60}
+        .paper-output{background:#0A0A0F;border:1px solid #1E1E2E;border-radius:12px;padding:20px 24px;font-family:'Courier New',monospace;font-size:12.5px;line-height:1.85;color:#C8D3E0;white-space:pre-wrap;word-break:break-word;max-height:520px;overflow-y:auto}
+        .paper-output::-webkit-scrollbar{width:4px}
+        .paper-output::-webkit-scrollbar-thumb{background:#2D2D3D;border-radius:2px}
+        .new-paper-btn{width:100%;padding:12px;border-radius:10px;border:1px solid #2D2D3D;background:transparent;color:#8B8FA8;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;margin-top:10px}
+        .new-paper-btn:hover{border-color:#4361EE;color:#4361EE}
+    </style>
+</head>
+<body>
+<div class="layout">
+
+    <!-- ── SIDEBAR ── -->
+    <div class="sidebar">
+        <div class="sidebar-logo">
+            <div class="sidebar-logo-icon">G</div>
+            <div class="sidebar-logo-text">Genify</div>
+        </div>
+        <div class="sidebar-nav">
+            <a href="/dashboard" class="nav-item active">
+                📄 Dashboard
+                <span class="nav-dot"></span>
+            </a>
+            <a href="/profile" class="nav-item">👤 Profile</a>
+            <a href="/pricing" class="nav-item">💰 Pricing</a>
+            <a href="/settings" class="nav-item">⚙️ Settings</a>
+            <a href="#" class="nav-item nav-danger" onclick="confirmLogout()">🚪 Logout</a>
+        </div>
+        <div class="sidebar-bottom">
+            <div class="user-pill">
+                <div class="user-avatar">{{ user.name[0] }}</div>
+                <div>
+                    <div class="user-info-name">{{ user.name }}</div>
+                    <div class="user-info-plan">{{ user.plan }} plan</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── MAIN ── -->
+    <div class="main">
+
+        <!-- Topbar -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <h1>Welcome back, {{ user.name.split()[0] }} 👋</h1>
+                <p>Generate curriculum-aligned question papers in 20 seconds</p>
+            </div>
+            {% if user.is_pro %}
+                <span class="plan-badge-pro">⚡ Pro Plan</span>
+            {% else %}
+                <span class="plan-badge-free">Free Plan</span>
+            {% endif %}
+        </div>
+
+        <!-- Free limit bar — only for free users -->
+        {% if not user.is_pro %}
+        <div class="limit-bar">
+            <div class="limit-bar-left">
+                <span>Papers used: <strong>{{ user.papers }} / 5</strong></span>
+                <div class="limit-progress">
+                    <div class="limit-progress-fill" style="width: {{ (user.papers / 10 * 100)|int }}%"></div>
+                </div>
+            </div>
+            <button class="upgrade-btn-small" onclick="showUpgradeModal()">⚡ Upgrade to Pro</button>
+        </div>
+        {% endif %}
+
+        <!-- Stats Row -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-icon blue">⚡</div>
+                <div>
+                    <div class="stat-num">20s</div>
+                    <div class="stat-label">Generation time</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon purple">📄</div>
+                <div>
+                    <div class="stat-num">{{ user.papers }}</div>
+                    <div class="stat-label">Papers generated</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green">✅</div>
+                <div>
+                    <div class="stat-num">{% if user.is_pro %}∞{% else %}{{ 5 - user.papers }}{% endif %}</div>
+                    <div class="stat-label">Papers remaining</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form section -->
+        <div id="formSection">
+
+            <!-- Upload -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Upload Chapter PDF</div>
+                        <div class="card-sub">Upload any chapter from your textbook</div>
+                    </div>
+                    <div class="step-badge">Step 1</div>
+                </div>
+                <div class="upload-zone" id="uploadZone"
+                    onclick="document.getElementById('pdfInput').click()"
+                    ondragover="event.preventDefault();this.classList.add('drag')"
+                    ondragleave="this.classList.remove('drag')"
+                    ondrop="handleDrop(event)">
+                    <div class="upload-icon" id="uploadIcon">📂</div>
+                    <div class="upload-title" id="uploadTitle">Click to upload your chapter PDF</div>
+                    <div class="upload-sub" id="uploadSub">or drag and drop · PDF files only</div>
+                </div>
+                <input type="file" id="pdfInput" accept=".pdf"
+                    style="display:none" onchange="fileSelected(this)">
+            </div>
+
+            <!-- Settings -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Customise Your Paper</div>
+                        <div class="card-sub">Set subject, class, difficulty and marks</div>
+                    </div>
+                    <div class="step-badge">Step 2</div>
+                </div>
+                <div class="grid2">
+                    <div>
+                        <label class="field-label">Subject</label>
+                        <select id="subject" onchange="updateSummary()">
+                            <option>Mathematics</option>
+                            <option>Science</option>
+                            <option>Social Science</option>
+                            <option>English</option>
+                            <option>Hindi</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="field-label">Class</label>
+                        <select id="cls" onchange="updateSummary()">
+                            <option>Class 6</option>
+                            <option>Class 7</option>
+                            <option>Class 8</option>
+                            <option>Class 9</option>
+                            <option>Class 10</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="field-label">Difficulty Level</label>
+                        <div class="diff-row">
+                            <button class="diff-btn easy" onclick="setDiff('easy',this)">Easy</button>
+                            <button class="diff-btn medium" onclick="setDiff('medium',this)">Medium</button>
+                            <button class="diff-btn" onclick="setDiff('hard',this)">Hard</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="field-label">
+                            <div class="marks-header">
+                                <span>Total Marks</span>
+                                <span class="marks-val" id="marksVal">40</span>
+                            </div>
+                        </label>
+                        <input type="range" id="marks" min="20" max="100" step="5" value="40"
+                            oninput="document.getElementById('marksVal').textContent=this.value;updateSummary()">
+                        <div class="marks-range"><span>20</span><span>60</span><span>100</span></div>
+                    </div>
+                </div>
+
+                <!-- Language — Pro only for Hindi -->
+                <div style="margin-top:16px">
+                    <div class="card-header" style="margin-bottom:8px">
+                        <label class="field-label" style="margin:0">Output Language</label>
+                        {% if not user.is_pro %}
+                            <span class="pro-only-badge">⚡ Hindi is Pro only</span>
+                        {% endif %}
+                    </div>
+                    <div class="lang-row">
+                        <button class="lang-btn active" onclick="setLang('English',this)">🇬🇧 English</button>
+                        {% if user.is_pro %}
+                            <button class="lang-btn" onclick="setLang('Hindi',this)">🇮🇳 Hindi</button>
+                        {% else %}
+                            <button class="lang-btn locked" onclick="showUpgradeModal()">🇮🇳 Hindi <span class="lock-tag">🔒 Pro</span></button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary -->
+            <div class="summary" id="summary">
+                <span>Mathematics</span> · <span>Class 9</span> · <span>Medium</span> · <span>40 Marks</span> · ~60 min
+            </div>
+
+            <div class="error-box" id="errorBox"></div>
+
+            <div class="progress-wrap" id="progressWrap">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">Generating your paper...</div>
+            </div>
+
+            <button class="gen-btn" id="genBtn" onclick="generate()" disabled>
+                ✨ Generate Question Paper
+            </button>
+            <div class="gen-hint">Upload a PDF above to enable · Takes ~15 seconds</div>
+        </div>
+
+        <!-- Result Section -->
+        <div class="result-section" id="resultSection">
+            <div class="success-bar">
+                <div style="display:flex;align-items:center;gap:10px">
+                    <span>✅</span>
+                    <span id="resultLabel">Paper generated!</span>
+                </div>
+                <span id="papersLeftLabel" style="font-size:12px;color:#8B8FA8"></span>
+            </div>
+            <div class="action-row">
+                <button class="action-btn" id="copyBtn" onclick="copyPaper()">📋 Copy</button>
+                <button class="action-btn" onclick="downloadPaper()">⬇️ Download PDF</button>
+                <button class="action-btn" onclick="printPaper()">🖨️ Print</button>
+            </div>
+            <div class="paper-output" id="paperOutput"></div>
+            <button class="new-paper-btn" onclick="resetForm()">🔄 Generate new paper</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── UPGRADE MODAL ── -->
+<div class="modal-overlay" id="upgradeModal" onclick="hideUpgradeModal(event)">
+    <div class="modal">
+        <div class="modal-icon">⚡</div>
+        <h2>Upgrade to Pro</h2>
+        <p>You've hit the free limit or tried a Pro feature. Upgrade to unlock everything — unlimited papers, Hindi support, and more.</p>
+        <div class="modal-features">
+            <div class="modal-feature">Unlimited question papers</div>
+            <div class="modal-feature">Hindi + English language</div>
+            <div class="modal-feature">All subjects and classes</div>
+            <div class="modal-feature">PDF download and print</div>
+            <div class="modal-feature">Priority support</div>
+        </div>
+        <div class="modal-price">₹999 <span>/ month</span></div>
+        <p style="font-size:12px;color:#8B8FA8;margin-bottom:16px">Pay via GPay / Cash · We activate manually within minutes</p>
+        <button class="modal-whatsapp" onclick="contactWhatsApp()">
+            💬 Contact us on WhatsApp to upgrade
+        </button>
+        <button class="modal-close" onclick="hideUpgradeModal()">Maybe later</button>
+    </div>
+</div>
+
+<script>
+    let selectedFile = null;
+    let selectedDiff = 'medium';
+    let selectedLang = 'English';
+    let paperText    = '';
+    let isPro        = {{ 'true' if user.is_pro else 'false' }};
+
+    // ── FILE ──
+    function fileSelected(input) {
+        if (input.files[0]) loadFile(input.files[0]);
+    }
+    function handleDrop(e) {
+        e.preventDefault();
+        document.getElementById('uploadZone').classList.remove('drag');
+        if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+    }
+    function loadFile(file) {
+        if (file.type !== 'application/pdf') { showError('Please upload a PDF file only.'); return; }
+        selectedFile = file;
+        document.getElementById('uploadZone').classList.add('done');
+        document.getElementById('uploadIcon').textContent  = '✅';
+        document.getElementById('uploadTitle').textContent = file.name;
+        document.getElementById('uploadTitle').className   = 'upload-title done';
+        document.getElementById('uploadSub').innerHTML     = 'Ready · <span class="remove-link" onclick="removeFile(event)">Remove</span>';
+        document.getElementById('genBtn').disabled = false;
+        updateSummary();
+    }
+    function removeFile(e) {
+        e.stopPropagation();
+        selectedFile = null;
+        document.getElementById('uploadZone').classList.remove('done');
+        document.getElementById('uploadIcon').textContent  = '📂';
+        document.getElementById('uploadTitle').textContent = 'Click to upload your chapter PDF';
+        document.getElementById('uploadTitle').className   = 'upload-title';
+        document.getElementById('uploadSub').textContent   = 'or drag and drop · PDF files only';
+        document.getElementById('genBtn').disabled = true;
+        document.getElementById('pdfInput').value  = '';
+    }
+
+    // ── DIFFICULTY ──
+    function setDiff(d, btn) {
+        selectedDiff = d;
+        document.querySelectorAll('.diff-btn').forEach(b => b.className = 'diff-btn');
+        btn.className = 'diff-btn ' + d;
+        updateSummary();
+    }
+
+    // ── LANGUAGE ──
+    function setLang(l, btn) {
+        if (!isPro && l === 'Hindi') { showUpgradeModal(); return; }
+        selectedLang = l;
+        document.querySelectorAll('.lang-btn:not(.locked)').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+
+    // ── SUMMARY ──
+    function updateSummary() {
+        const s = document.getElementById('subject').value;
+        const c = document.getElementById('cls').value;
+        const m = document.getElementById('marks').value;
+        const d = selectedDiff.charAt(0).toUpperCase() + selectedDiff.slice(1);
+        document.getElementById('summary').innerHTML =
+            `<span>${s}</span> · <span>${c}</span> · <span>${d}</span> · <span>${m} Marks</span> · ~${Math.round(m*1.5)} min`;
+    }
+
+    // ── PROGRESS ──
+    let progressInterval = null;
+    function startProgress() {
+        const fill  = document.getElementById('progressFill');
+        const text  = document.getElementById('progressText');
+        document.getElementById('progressWrap').style.display = 'block';
+        const steps = ['Reading your PDF...','Analysing chapter content...','Building Section A...','Building Section B...','Building Section C...','Formatting paper...'];
+        let w = 0, i = 0;
+        progressInterval = setInterval(() => {
+            w += 16; fill.style.width = Math.min(w, 90) + '%';
+            text.textContent = steps[i] || 'Almost done...'; i++;
+            if (w >= 90) clearInterval(progressInterval);
+        }, 400);
+    }
+    function finishProgress() {
+        clearInterval(progressInterval);
+        document.getElementById('progressFill').style.width = '100%';
+        document.getElementById('progressText').textContent = 'Done!';
+        setTimeout(() => document.getElementById('progressWrap').style.display = 'none', 500);
+    }
+
+    // ── GENERATE ──
+    async function generate() {
+        if (!selectedFile) return;
+        hideError();
+        const btn = document.getElementById('genBtn');
+        btn.disabled = true;
+        btn.textContent = '⚙️ Generating...';
+        startProgress();
+
+        const formData = new FormData();
+        formData.append('pdf',        selectedFile);
+        formData.append('subject',    document.getElementById('subject').value);
+        formData.append('cls',        document.getElementById('cls').value);
+        formData.append('difficulty', selectedDiff);
+        formData.append('marks',      document.getElementById('marks').value);
+        formData.append('language',   selectedLang);
+
+        try {
+            const res  = await fetch('/generate', { method: 'POST', body: formData });
+            const data = await res.json();
+            finishProgress();
+
+            if (data.success) {
+                paperText = data.paper;
+                showResult(data);
+            } else if (data.error === 'free_limit_reached') {
+                showUpgradeModal();
+                btn.disabled = false;
+                btn.textContent = '✨ Generate Question Paper';
+            } else if (data.error === 'hindi_pro_only') {
+                showUpgradeModal();
+                btn.disabled = false;
+                btn.textContent = '✨ Generate Question Paper';
+            } else {
+                showError(data.error || 'Something went wrong.');
+                btn.disabled = false;
+                btn.textContent = '✨ Generate Question Paper';
+            }
+        } catch (err) {
+            finishProgress();
+            showError('Network error. Please try again.');
+            btn.disabled = false;
+            btn.textContent = '✨ Generate Question Paper';
+        }
+    }
+
+    // ── SHOW RESULT ──
+    function showResult(data) {
+        const s = document.getElementById('subject').value;
+        const c = document.getElementById('cls').value;
+        const m = document.getElementById('marks').value;
+        document.getElementById('formSection').style.display   = 'none';
+        document.getElementById('resultSection').style.display = 'block';
+        document.getElementById('paperOutput').textContent     = paperText;
+        document.getElementById('resultLabel').textContent     = `✅ ${s} · ${c} · ${m} Marks`;
+        if (!isPro && data.papers_left) {
+            document.getElementById('papersLeftLabel').textContent = `${data.papers_left} papers remaining`;
+        }
+    }
+
+    // ── RESET ──
+    function resetForm() {
+        selectedFile = null; paperText = '';
+        document.getElementById('formSection').style.display   = 'block';
+        document.getElementById('resultSection').style.display = 'none';
+        document.getElementById('uploadZone').classList.remove('done');
+        document.getElementById('uploadIcon').textContent  = '📂';
+        document.getElementById('uploadTitle').textContent = 'Click to upload your chapter PDF';
+        document.getElementById('uploadTitle').className   = 'upload-title';
+        document.getElementById('uploadSub').textContent   = 'or drag and drop · PDF files only';
+        document.getElementById('genBtn').disabled    = true;
+        document.getElementById('genBtn').textContent = '✨ Generate Question Paper';
+        document.getElementById('pdfInput').value     = '';
+        hideError();
+    }
+
+    // ── COPY ──
+    function copyPaper() {
+        navigator.clipboard.writeText(paperText);
+        const btn = document.getElementById('copyBtn');
+        btn.textContent = '✅ Copied!';
+        btn.classList.add('copy-done');
+        setTimeout(() => { btn.textContent = '📋 Copy'; btn.classList.remove('copy-done'); }, 2000);
+    }
+
+    // ── DOWNLOAD / PRINT ──
+    function downloadPaper() {
+        const s   = document.getElementById('subject').value;
+        const c   = document.getElementById('cls').value;
+        const win = window.open('', '_blank');
+        win.document.write(`<html><head><title>Question Paper — ${s} — ${c}</title>
+        <style>body{font-family:'Courier New',monospace;font-size:13px;line-height:1.8;padding:48px;color:#000;white-space:pre-wrap;max-width:800px;margin:0 auto}</style>
+        </head><body>${paperText.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</body></html>`);
+        win.document.close();
+        win.print();
+    }
+    function printPaper() { downloadPaper(); }
+
+    // ── UPGRADE MODAL ──
+    function showUpgradeModal() {
+        document.getElementById('upgradeModal').classList.add('show');
+    }
+    function hideUpgradeModal(e) {
+        if (!e || e.target === document.getElementById('upgradeModal')) {
+            document.getElementById('upgradeModal').classList.remove('show');
+        }
+    }
+    function contactWhatsApp() {
+        window.open('https://wa.me/919625412098?text=Hi! I want to upgrade to Genify Pro.', '_blank');
+    }
+
+    // ── ERROR ──
+    function showError(msg) {
+        const box = document.getElementById('errorBox');
+        box.textContent = '⚠️ ' + msg;
+        box.style.display = 'block';
+    }
+    function hideError() {
+        document.getElementById('errorBox').style.display = 'none';
+    }
+</script>
+<!-- LOGOUT MODAL -->
+<div class="modal-overlay" id="logoutModal" onclick="closeLogoutOutside(event)" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center">
+    <div style="background:#0F0F1A;border:1px solid #2D2D3D;border-radius:20px;padding:36px;max-width:380px;width:90%;text-align:center">
+        <div style="font-size:40px;margin-bottom:16px">🚪</div>
+        <h2 style="font-size:20px;font-weight:800;color:#fff;margin-bottom:8px">Logout of Genify?</h2>
+        <p style="font-size:13px;color:#8B8FA8;margin-bottom:24px;line-height:1.6">You will need to sign in again with Google to access your dashboard.</p>
+        <div style="display:flex;gap:10px">
+            <button onclick="closeLogoutModal()" style="flex:1;padding:12px;border-radius:10px;background:#1E1E2E;border:1px solid #2D2D3D;color:#E2E8F0;font-size:14px;font-weight:700;cursor:pointer">
+                ← Stay
+            </button>
+            <button onclick="window.location.href='/logout'" style="flex:1;padding:12px;border-radius:10px;background:#EF4444;border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer">
+                Yes, logout
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function confirmLogout() {
+        const modal = document.getElementById('logoutModal');
+        modal.style.display = 'flex';
+    }
+    function closeLogoutModal() {
+        document.getElementById('logoutModal').style.display = 'none';
+    }
+    function closeLogoutOutside(e) {
+        if (e.target === document.getElementById('logoutModal')) {
+            closeLogoutModal();
+        }
+    }
+</script>
+</body>
+</html>

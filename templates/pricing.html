@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Genify — Pricing</title>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Segoe UI',Arial,sans-serif;background:#0A0A0F;color:#E2E8F0;min-height:100vh}
+        nav{display:flex;align-items:center;justify-content:space-between;padding:0 60px;height:64px;border-bottom:1px solid #1E1E2E;background:rgba(10,10,15,0.95);backdrop-filter:blur(12px);position:sticky;top:0;z-index:100}
+        .nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+        .nav-logo-icon{width:32px;height:32px;background:linear-gradient(135deg,#4361EE,#7B2FBE);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff}
+        .nav-logo-text{font-size:18px;font-weight:800;color:#fff}
+        .nav-links{display:flex;align-items:center;gap:28px}
+        .nav-links a{color:#8B8FA8;text-decoration:none;font-size:14px;font-weight:500;transition:color .2s}
+        .nav-links a:hover,.nav-links a.active{color:#fff}
+        .nav-btns{display:flex;gap:10px;align-items:center}
+        .btn-outline{padding:8px 18px;border:1px solid #2D2D3D;border-radius:8px;color:#E2E8F0;text-decoration:none;font-size:14px;font-weight:600;transition:all .2s}
+        .btn-outline:hover{border-color:#4361EE;color:#4361EE}
+        .btn-primary{padding:8px 18px;border-radius:8px;background:linear-gradient(135deg,#4361EE,#7B2FBE);color:#fff;text-decoration:none;font-size:14px;font-weight:600;border:none;cursor:pointer}
+        .hero{text-align:center;padding:64px 20px 40px}
+        .hero h1{font-size:40px;font-weight:900;color:#fff;letter-spacing:-1px;margin-bottom:12px}
+        .hero h1 span{background:linear-gradient(135deg,#4361EE,#7B2FBE);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .hero p{font-size:16px;color:#8B8FA8;max-width:480px;margin:0 auto}
+        .toggle-wrap{display:flex;align-items:center;justify-content:center;gap:12px;margin:28px 0}
+        .toggle-label{font-size:14px;font-weight:600;color:#4A4A6A;transition:color .2s}
+        .toggle-label.on{color:#E2E8F0}
+        .toggle{width:48px;height:26px;border-radius:13px;background:#4361EE;border:none;cursor:pointer;position:relative;flex-shrink:0}
+        .toggle-dot{width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:3px;left:3px;transition:left .25s}
+        .toggle.yearly .toggle-dot{left:25px}
+        .save-pill{background:#27AE6022;color:#27AE60;border:1px solid #27AE6033;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;display:none}
+        .save-pill.show{display:inline-block}
+        .plans-wrap{max-width:980px;margin:0 auto;padding:0 20px 60px}
+        .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start}
+        .plan{background:#0F0F1A;border:1px solid #1E1E2E;border-radius:16px;padding:28px;position:relative;margin-top:16px;cursor:pointer;transition:transform .2s,border-color .2s,box-shadow .2s}
+.plan:hover{transform:translateY(-6px);border-color:#4361EE;box-shadow:0 8px 32px rgba(67,97,238,0.15)}
+.plan.featured{border:2px solid #4361EE}
+.plan.featured:hover{transform:translateY(-6px);box-shadow:0 8px 32px rgba(67,97,238,0.3)}
+        .popular-tag{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#4361EE,#7B2FBE);color:#fff;font-size:11px;font-weight:700;padding:4px 14px;border-radius:20px;white-space:nowrap}
+        .basic-tag{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:#F59E0B22;color:#F59E0B;border:1px solid #F59E0B44;font-size:11px;font-weight:700;padding:4px 14px;border-radius:20px;white-space:nowrap}
+        .plan-name{font-size:13px;font-weight:700;color:#8B8FA8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
+        .plan-price{font-size:36px;font-weight:900;color:#fff;letter-spacing:-1px;line-height:1;margin-bottom:4px}
+        .plan-price span{font-size:15px;color:#8B8FA8;font-weight:400}
+        .plan-per-year{font-size:12px;color:#4A4A6A;margin-bottom:8px;min-height:18px}
+        .plan-desc{font-size:13px;color:#8B8FA8;line-height:1.6;margin-bottom:20px;min-height:52px}
+        .plan-divider{border:none;border-top:1px solid #1E1E2E;margin-bottom:20px}
+        .features{display:flex;flex-direction:column;gap:11px;margin-bottom:24px}
+        .feat{display:flex;align-items:flex-start;gap:9px;font-size:13px;line-height:1.45}
+        .feat-yes{color:#27AE60;flex-shrink:0;margin-top:1px}
+        .feat-up{color:#4361EE;flex-shrink:0;margin-top:1px;font-size:12px}
+        .feat-txt{color:#E2E8F0}
+        .feat-txt.soft{color:#4A4A6A}
+        .plan-cta{width:100%;padding:13px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;border:none;text-align:center;display:block;text-decoration:none}
+        .cta-ghost{background:#1E1E2E;color:#E2E8F0}
+        .cta-ghost:hover{background:#2D2D3D}
+        .cta-filled{background:linear-gradient(135deg,#4361EE,#7B2FBE);color:#fff;box-shadow:0 4px 16px rgba(67,97,238,0.3)}
+        .cta-filled:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(67,97,238,0.4)}
+        .value-row{display:flex;justify-content:center;gap:28px;flex-wrap:wrap;padding:0 20px 48px;max-width:960px;margin:0 auto}
+        .value{display:flex;align-items:center;gap:8px;font-size:13px;color:#8B8FA8}
+        .faq-wrap{max-width:640px;margin:0 auto;padding:0 20px 80px}
+        .faq-title{font-size:22px;font-weight:800;color:#fff;text-align:center;letter-spacing:-0.5px;margin-bottom:28px}
+        .faq-item{border-top:1px solid #1E1E2E;padding:18px 0;cursor:pointer}
+        .faq-item:last-child{border-bottom:1px solid #1E1E2E}
+        .faq-q{display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:600;color:#E2E8F0}
+        .faq-arrow{color:#4A4A6A;transition:transform .2s;font-size:16px}
+        .faq-a{font-size:13px;color:#8B8FA8;line-height:1.7;margin-top:12px;display:none}
+        .faq-item.open .faq-arrow{transform:rotate(180deg)}
+        .faq-item.open .faq-a{display:block}
+        .whatsapp-section{background:#0F0F1A;border:1px solid #1E1E2E;border-radius:16px;padding:32px;text-align:center;max-width:500px;margin:0 auto 60px}
+        .whatsapp-section h3{font-size:18px;font-weight:800;color:#fff;margin-bottom:8px}
+        .whatsapp-section p{font-size:13px;color:#8B8FA8;margin-bottom:20px;line-height:1.6}
+        .whatsapp-btn{display:inline-flex;align-items:center;gap:10px;padding:13px 28px;border-radius:10px;background:#25D366;color:#fff;font-size:15px;font-weight:700;border:none;cursor:pointer;transition:all .2s;text-decoration:none}
+        .whatsapp-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(37,211,102,0.3)}
+        footer{border-top:1px solid #1E1E2E;padding:28px 60px;display:flex;align-items:center;justify-content:space-between}
+        .footer-logo{font-size:15px;font-weight:800;color:#fff}
+        .footer-links{display:flex;gap:20px}
+        .footer-links a{color:#4A4A6A;text-decoration:none;font-size:13px}
+        .footer-copy{font-size:12px;color:#4A4A6A}
+
+        /* ── MODAL ── */
+        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center}
+        .modal-overlay.show{display:flex}
+        .modal{background:#0F0F1A;border:1px solid #2D2D3D;border-radius:20px;padding:36px;max-width:440px;width:90%;text-align:center}
+        .modal-icon{font-size:36px;margin-bottom:14px}
+        .modal h2{font-size:20px;font-weight:800;color:#fff;margin-bottom:8px}
+        .modal p{font-size:13px;color:#8B8FA8;margin-bottom:20px;line-height:1.6}
+        .modal-steps{text-align:left;background:#1A1A2E;border-radius:10px;padding:16px 20px;margin-bottom:20px}
+        .modal-step{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;font-size:13px;color:#E2E8F0}
+        .modal-step:last-child{margin-bottom:0}
+        .step-num{width:22px;height:22px;border-radius:50%;background:#4361EE;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+        .modal-wa-btn{width:100%;padding:13px;border-radius:10px;background:#25D366;color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer;margin-bottom:10px;transition:all .2s}
+        .modal-wa-btn:hover{transform:translateY(-1px)}
+        .modal-close-btn{width:100%;padding:10px;border-radius:10px;background:transparent;border:1px solid #2D2D3D;color:#8B8FA8;font-size:14px;cursor:pointer}
+        .modal-close-btn:hover{background:#1E1E2E}
+    </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+    <a href="/" class="nav-logo">
+        <div class="nav-logo-icon">G</div>
+        <div class="nav-logo-text">Genify</div>
+    </a>
+    <div class="nav-links">
+        <a href="/#features">Features</a>
+        <a href="/#how">How it works</a>
+        <a href="/pricing" class="active">Pricing</a>
+    </div>
+    <div class="nav-btns">
+        {% if user %}
+            <span style="font-size:13px;color:#8B8FA8">👋 {{ user.name.split()[0] }}</span>
+            <a href="/dashboard" class="btn-primary">Dashboard</a>
+        {% else %}
+            <a href="/login" class="btn-outline">Log in</a>
+            <a href="/login" class="btn-primary">Get started free</a>
+        {% endif %}
+    </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+    <h1>Simple, honest <span>pricing</span></h1>
+    <p>Start free. Upgrade when you're ready. No hidden fees, no surprises.</p>
+</div>
+
+<!-- BILLING TOGGLE -->
+<div class="toggle-wrap">
+    <span class="toggle-label on" id="mlabel">Monthly</span>
+    <button class="toggle" id="toggleBtn" onclick="switchBilling()" aria-label="Toggle billing">
+        <div class="toggle-dot" id="tdot"></div>
+    </button>
+    <span class="toggle-label" id="ylabel">Yearly</span>
+    <span class="save-pill" id="savePill">🎉 2 months free</span>
+</div>
+
+<!-- PLANS -->
+<div class="plans-wrap">
+    <div class="plans">
+
+        <!-- FREE -->
+        <div class="plan" onclick="window.location.href='/login'"style="cursor:pointer">
+            <div class="plan-name">Free</div>
+            <div class="plan-price">₹0 <span>/ month</span></div>
+            <div class="plan-per-year"></div>
+            <div class="plan-desc">See the magic before you invest a single rupee. No commitment needed.</div>
+            <hr class="plan-divider">
+            <div class="features">
+                <div class="feat"><span class="feat-yes">✓</span><span class="feat-txt">5 papers to get started</span></div>
+                <div class="feat"><span class="feat-yes">✓</span><span class="feat-txt">English language</span></div>
+                <div class="feat"><span class="feat-yes">✓</span><span class="feat-txt">PDF download included</span></div>
+                <div class="feat"><span class="feat-yes">✓</span><span class="feat-txt">All subjects · Class 6 to 10</span></div>
+                <div class="feat"><span class="feat-up">↑</span><span class="feat-txt soft">Upgrade for Hindi language</span></div>
+                <div class="feat"><span class="feat-up">↑</span><span class="feat-txt soft">Upgrade for institute branding</span></div>
+                <div class="feat"><span class="feat-up">↑</span><span class="feat-txt soft">Upgrade for answer keys</span></div>
+            </div>
+            <a href="/login" class="plan-cta cta-ghost">Get started free</a>
+        </div>
+
+        <!-- STARTER DECOY -->
+        <div class="plan" onclick="showUpgradeModal('Starter', '799')" style="cursor:pointer">
+            <div class="basic-tag">Basic</div>
+            <div class="plan-name">Starter</div>
+            <div class="plan-price" id="starter-price">₹799 <span>/ month</span></div>
+            <div class="plan-per-year" id="starter-year"></div>
+            <div class="plan-desc">For small institutes just beginning with AI papers. Room to grow further.</div>
+            <hr class="plan-divider">
+            <div class="features">
+                <div class="feat"><span class="feat-yes">✓</span><span class="feat-txt">30 papers per month</span></div>
+                <div class="feat"><span class="feat-yes">✓</span><span class="feat-txt">English language</span></div>
+                <div class="feat"><span class="feat-yes">✓</span><span class="feat-txt">PDF download included</span></div>
+                <div class="feat"><span class="feat-yes">✓</span><span class="feat-txt">All subjects · Class 6 to 10</span></div>
+                <div class="feat"><span class="feat-up">↑</span><span class="feat-txt soft">Upgrade for Hindi language</span></div>
+                <div class="feat"><span class="feat-up">↑</span><span class="feat-txt soft">Upgrade for institute branding</span></div>
+                <div class="feat"><span class="feat-up">↑</span><span class="feat-txt soft">Upgrade for answer keys</span></div>
+            </div>
+            <button class="plan-cta cta-ghost" onclick="showUpgradeModal('Starter', '799')">Get Starter</button>
+        </div>
+
+        <!-- PRO HERO -->
+        <div class="plan featured" onclick="showUpgradeModal('Pro', '999')" style="cursor:pointer">
+            <div class="popular-tag">⚡ Most popular</div>
+            <div class="plan-name">Pro</div>
+            <div class="plan-price" id="pro-price">₹999 <span>/ month</span></div>
+            <div class="plan-per-year" id="pro-year"></div>
+            <div class="plan-desc">Everything your institute needs to run at full power. The obvious choice.</div>
+            <hr class="plan-divider">
+            <div class="features">
+                <div class="feat"><span class="feat-yes">✓</span><span class="feat-txt">Unlimited papers, always</span></div>
+                <div class="feat"><span class="feat-yes">✓</span><span class="feat-txt">Hindi and English both</span></div>
+                <div class="feat"><span class="feat-yes">✓</span><span class="feat-txt">PDF download and print</span></div>
+                <div class="feat"><span class="feat-yes">✓</span><span class="feat-txt">All subjects · Class 6 to 10</span></div>
+                <div class="feat"><span class="feat-yes">✓</span><span class="feat-txt">Institute name on every paper</span></div>
+                <div class="feat"><span class="feat-yes">✓</span><span class="feat-txt">Answer key with every paper</span></div>
+                <div class="feat"><span class="feat-yes">✓</span><span class="feat-txt">Priority WhatsApp support</span></div>
+            </div>
+            <button class="plan-cta cta-filled" onclick="showUpgradeModal('Pro', '999')">Get Pro — best value</button>
+        </div>
+
+    </div>
+
+    <!-- VALUE PROPS -->
+    <div class="value-row" style="margin-top:32px">
+        <div class="value">💳 Pay via UPI or GPay</div>
+        <div class="value">🔓 No lock-in, cancel anytime</div>
+        <div class="value">⚡ Pro activated within minutes</div>
+        <div class="value">🇮🇳 Made for India</div>
+    </div>
+</div>
+
+<!-- WHATSAPP SECTION -->
+<div style="padding:0 20px;margin-bottom:60px">
+    <div class="whatsapp-section">
+        <h3>💬 Have questions?</h3>
+        <p>Not sure which plan is right for you? WhatsApp us directly — we'll help you choose and get you set up in minutes.</p>
+        <a href="https://wa.me/919625412098?text=Hi! I want to know more about Genify pricing." target="_blank" class="whatsapp-btn">
+            💬 Chat with us on WhatsApp
+        </a>
+    </div>
+</div>
+
+<!-- FAQ -->
+<div class="faq-wrap">
+    <div class="faq-title">Common questions</div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+        <div class="faq-q">How do I upgrade to Pro? <span class="faq-arrow">▾</span></div>
+        <div class="faq-a">Click "Get Pro" above — WhatsApp opens with your details pre-filled. Pay via GPay or cash. We activate your Pro access within minutes. No card needed, no complicated setup.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+        <div class="faq-q">Can I try before paying? <span class="faq-arrow">▾</span></div>
+        <div class="faq-a">Yes — the Free plan gives you 5 papers with zero commitment. See exactly how it works before spending a single rupee.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+        <div class="faq-q">What does institute branding mean? <span class="faq-arrow">▾</span></div>
+        <div class="faq-a">Your institute name appears on every generated paper — just like a real printed question paper from your coaching centre. Completely professional.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+        <div class="faq-q">What is the difference between Starter and Pro? <span class="faq-arrow">▾</span></div>
+        <div class="faq-a">Starter gives 30 papers in English only — no Hindi, no branding, no answer keys. Pro gives unlimited papers, Hindi support, your institute name on every paper, answer keys, and priority WhatsApp support. For only ₹200 more — Pro is the obvious choice.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+        <div class="faq-q">Can I cancel anytime? <span class="faq-arrow">▾</span></div>
+        <div class="faq-a">Absolutely. No contracts, no lock-in. Just WhatsApp us and we stop immediately. We believe in earning your business every month.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+        <div class="faq-q">Does it work for all CBSE subjects? <span class="faq-arrow">▾</span></div>
+        <div class="faq-a">Yes — Mathematics, Science, Social Science, English, Hindi — all Class 6 to 10. Just upload any chapter PDF and the AI builds a curriculum-aligned paper instantly.</div>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+    <div class="footer-logo">📄 Genify</div>
+    <div class="footer-links">
+        <a href="/">Home</a>
+        <a href="/pricing">Pricing</a>
+        <a href="/login">Login</a>
+    </div>
+    <div class="footer-copy">© 2026 Genify · Built in India 🇮🇳</div>
+</footer>
+
+<!-- UPGRADE MODAL -->
+<div class="modal-overlay" id="upgradeModal" onclick="closeModalOutside(event)">
+    <div class="modal">
+        <div class="modal-icon">⚡</div>
+        <h2 id="modal-title">Upgrade to Pro</h2>
+        <p id="modal-desc">You are one step away from unlimited question papers. Here's how it works:</p>
+        <div class="modal-steps">
+            <div class="modal-step">
+                <div class="step-num">1</div>
+                <div>Click the WhatsApp button below — your details are pre-filled automatically</div>
+            </div>
+            <div class="modal-step">
+                <div class="step-num">2</div>
+                <div>Pay <strong id="modal-price">₹999</strong> via GPay, PhonePe, or cash to our number</div>
+            </div>
+            <div class="modal-step">
+                <div class="step-num">3</div>
+                <div>We activate your Pro access within minutes — refresh and you're live ✅</div>
+            </div>
+        </div>
+        <button class="modal-wa-btn" onclick="openWhatsApp()">
+            💬 WhatsApp us to upgrade
+        </button>
+        <button class="modal-close-btn" onclick="closeModal()">Maybe later</button>
+    </div>
+</div>
+
+<script>
+    let yearly      = false;
+    let currentPlan = 'Pro';
+    let currentPrice= '999';
+
+    // ── BILLING TOGGLE ────────────────────────────
+    function switchBilling() {
+        yearly = !yearly;
+        const btn  = document.getElementById('toggleBtn');
+        const ml   = document.getElementById('mlabel');
+        const yl   = document.getElementById('ylabel');
+        const pill = document.getElementById('savePill');
+        const sp   = document.getElementById('starter-price');
+        const pp   = document.getElementById('pro-price');
+        const sy   = document.getElementById('starter-year');
+        const py   = document.getElementById('pro-year');
+        if (yearly) {
+            btn.classList.add('yearly');
+            ml.classList.remove('on');
+            yl.classList.add('on');
+            pill.classList.add('show');
+            sp.innerHTML   = '₹599 <span>/ month</span>';
+            pp.innerHTML   = '₹749 <span>/ month</span>';
+            sy.textContent = 'Billed as ₹7,190/year';
+            py.textContent = 'Billed as ₹8,990/year';
+        } else {
+            btn.classList.remove('yearly');
+            ml.classList.add('on');
+            yl.classList.remove('on');
+            pill.classList.remove('show');
+            sp.innerHTML   = '₹799 <span>/ month</span>';
+            pp.innerHTML   = '₹999 <span>/ month</span>';
+            sy.textContent = '';
+            py.textContent = '';
+        }
+    }
+
+    // ── UPGRADE MODAL ─────────────────────────────
+    function showUpgradeModal(plan, price) {
+        currentPlan  = plan;
+        currentPrice = yearly
+            ? (plan === 'Pro' ? '749' : '599')
+            : price;
+
+        document.getElementById('modal-title').textContent =
+            'Upgrade to ' + plan;
+        document.getElementById('modal-price').textContent =
+            '₹' + currentPrice + '/month';
+        document.getElementById('modal-desc').textContent =
+            plan === 'Pro'
+            ? 'You are one step away from unlimited papers. Here is how it works:'
+            : 'Get 30 papers per month. Here is how it works:';
+
+        document.getElementById('upgradeModal').classList.add('show');
+    }
+
+    function openWhatsApp() {
+        {% if user %}
+        const name    = "{{ user.name }}";
+        const email   = "{{ user.email }}";
+        const billing = yearly ? 'Yearly' : 'Monthly';
+        const msg     = `Hi! I want to upgrade to Genify ${currentPlan} Plan.\n\nDetails:\nName: ${name}\nEmail: ${email}\nPlan: ${currentPlan} ${billing} — ₹${currentPrice}/month\n\nPlease confirm payment details.`;
+        window.open('https://wa.me/919625412098?text=' + encodeURIComponent(msg), '_blank');
+        {% else %}
+        window.location.href = '/login';
+        {% endif %}
+    }
+
+    function closeModal() {
+        document.getElementById('upgradeModal').classList.remove('show');
+    }
+
+    function closeModalOutside(e) {
+        if (e.target === document.getElementById('upgradeModal')) closeModal();
+    }
+
+    // ── FAQ ───────────────────────────────────────
+    function toggleFaq(el) {
+        el.classList.toggle('open');
+    }
+</script>
+</body>
+</html>
