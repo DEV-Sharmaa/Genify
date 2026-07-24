@@ -1,57 +1,111 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Genify — Profile</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234361EE'/><text x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='18' font-weight='bold' font-family='sans-serif'>G</text></svg>">
     <style>
         *{box-sizing:border-box;margin:0;padding:0}
         body{font-family:'Segoe UI',Arial,sans-serif;background:#0A0A0F;color:#E2E8F0;min-height:100vh}
         .layout{display:flex;min-height:100vh}
-        .sidebar{width:240px;background:#0F0F1A;border-right:1px solid #1E1E2E;padding:20px 0;position:fixed;height:100vh;display:flex;flex-direction:column}
+
+        /* ── SIDEBAR ── */
+        .sidebar{width:240px;background:#0F0F1A;border-right:1px solid #1E1E2E;padding:20px 0;position:fixed;height:100vh;display:flex;flex-direction:column;transition:transform .3s;z-index:50}
         .sidebar-logo{display:flex;align-items:center;gap:10px;padding:0 20px 24px;border-bottom:1px solid #1E1E2E}
         .sidebar-logo-icon{width:32px;height:32px;background:linear-gradient(135deg,#4361EE,#7B2FBE);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px}
         .sidebar-logo-text{font-size:17px;font-weight:800;color:#fff}
-        .sidebar-nav{padding:16px 12px;flex:1}
-        .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:#8B8FA8;text-decoration:none;font-size:14px;font-weight:500;transition:all .2s;margin-bottom:4px}
+        .sidebar-nav{padding:16px 12px;flex:1;display:flex;flex-direction:column;gap:4px}
+        .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:#8B8FA8;text-decoration:none;font-size:14px;font-weight:500;transition:all .2s}
         .nav-item:hover{background:#1E1E2E;color:#fff}
         .nav-item.active{background:#1E1E2E;color:#fff}
-        .nav-dot{width:6px;height:6px;border-radius:50%;background:#4361EE;margin-left:auto}
+        .nav-dot{width:6px;height:6px;border-radius:50%;background:#4361EE;margin-left:auto;flex-shrink:0}
         .sidebar-bottom{padding:16px 12px;border-top:1px solid #1E1E2E}
         .user-pill{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:#1E1E2E}
         .user-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#4361EE,#7B2FBE);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
         .user-name{font-size:13px;font-weight:600;color:#fff}
         .user-plan{font-size:11px;color:#8B8FA8}
+
+        /* ── MOBILE SIDEBAR TOGGLE ── */
+        .sidebar-toggle{display:none;position:fixed;top:16px;left:16px;z-index:100;width:40px;height:40px;background:#1E1E2E;border:1px solid #2D2D3D;border-radius:10px;color:#fff;font-size:18px;cursor:pointer;align-items:center;justify-content:center}
+
+        /* ── MAIN ── */
         .main{margin-left:240px;padding:40px;flex:1}
+
+        /* ── PAGE HEADER ── */
         .page-title{font-size:24px;font-weight:800;color:#fff;letter-spacing:-0.5px;margin-bottom:6px}
         .page-sub{font-size:14px;color:#8B8FA8;margin-bottom:32px}
-        /* Profile card */
-        .profile-card{background:#0F0F1A;border:1px solid #1E1E2E;border-radius:16px;padding:32px;display:flex;align-items:center;gap:24px;margin-bottom:20px}
+
+        /* ── PROFILE CARD ── */
+        .profile-card{background:#0F0F1A;border:1px solid #1E1E2E;border-radius:16px;padding:32px;display:flex;align-items:center;gap:24px;margin-bottom:20px;flex-wrap:wrap}
         .profile-avatar{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#4361EE,#7B2FBE);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#fff;flex-shrink:0}
         .profile-name{font-size:22px;font-weight:800;color:#fff;margin-bottom:4px}
         .profile-email{font-size:14px;color:#8B8FA8;margin-bottom:10px}
-        .plan-badge{display:inline-block;background:#4361EE22;color:#4361EE;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;border:1px solid #4361EE55}
-        /* Stats */
+        .plan-badge-pro{display:inline-block;background:#4361EE22;color:#4361EE;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;border:1px solid #4361EE55}
+        .plan-badge-starter{display:inline-block;background:#F59E0B22;color:#F59E0B;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;border:1px solid #F59E0B55}
+        .plan-badge-free{display:inline-block;background:#1E1E2E;color:#8B8FA8;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;border:1px solid #2D2D3D}
+
+        /* ── STATS ── */
         .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
         .stat-card{background:#0F0F1A;border:1px solid #1E1E2E;border-radius:16px;padding:24px;text-align:center}
+        .stat-icon{font-size:24px;margin-bottom:8px}
         .stat-num{font-size:32px;font-weight:900;color:#fff;letter-spacing:-1px;margin-bottom:4px}
         .stat-label{font-size:13px;color:#8B8FA8}
-        /* Info section */
-        .info-card{background:#0F0F1A;border:1px solid #1E1E2E;border-radius:16px;padding:28px}
+
+        /* ── INFO CARD ── */
+        .info-card{background:#0F0F1A;border:1px solid #1E1E2E;border-radius:16px;padding:28px;margin-bottom:20px}
         .info-title{font-size:16px;font-weight:700;color:#fff;margin-bottom:20px}
-        .info-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #1E1E2E}
+        .info-row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid #1E1E2E}
         .info-row:last-child{border-bottom:none}
         .info-key{font-size:14px;color:#8B8FA8;font-weight:500}
         .info-val{font-size:14px;color:#E2E8F0;font-weight:600}
-        .upgrade-btn{padding:11px 24px;border-radius:10px;background:linear-gradient(135deg,#4361EE,#7B2FBE);color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer;transition:all .2s;margin-top:20px}
-        .upgrade-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(67,97,238,0.4)}
+
+        /* ── QUICK ACTIONS ── */
+        .quick-actions{display:flex;gap:12px;flex-wrap:wrap}
+        .action-btn{padding:11px 24px;border-radius:10px;background:linear-gradient(135deg,#4361EE,#7B2FBE);color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer;transition:all .2s;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+        .action-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(67,97,238,0.4)}
+        .action-btn.secondary{background:#1E1E2E;border:1px solid #2D2D3D;color:#E2E8F0}
+        .action-btn.secondary:hover{border-color:#4361EE;color:#4361EE;box-shadow:none}
+
+        /* ── UPGRADE BANNER (Free users) ── */
+        .upgrade-banner{background:linear-gradient(135deg,#4361EE11,#7B2FBE11);border:1px solid #4361EE33;border-radius:16px;padding:24px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+        .upgrade-banner-text h3{font-size:16px;font-weight:700;color:#fff;margin-bottom:4px}
+        .upgrade-banner-text p{font-size:13px;color:#8B8FA8}
+        .upgrade-banner-btn{padding:11px 24px;border-radius:10px;background:linear-gradient(135deg,#4361EE,#7B2FBE);color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer;transition:all .2s;text-decoration:none;white-space:nowrap}
+        .upgrade-banner-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(67,97,238,0.4)}
+
+        /* ── LOGOUT MODAL ── */
+        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center}
+        .modal-overlay.show{display:flex}
+        .modal{background:#0F0F1A;border:1px solid #2D2D3D;border-radius:20px;padding:36px;max-width:380px;width:90%;text-align:center}
+
+        /* ── TOAST ── */
+        .toast{position:fixed;bottom:24px;right:24px;background:#0F0F1A;border:1px solid #2D2D3D;border-radius:12px;padding:14px 20px;font-size:13px;color:#E2E8F0;z-index:2000;transform:translateY(100px);opacity:0;transition:all .3s;display:flex;align-items:center;gap:10px;box-shadow:0 8px 30px rgba(0,0,0,0.4)}
+        .toast.show{transform:translateY(0);opacity:1}
+        .toast.success{border-color:#27AE6044}
+
+        /* ── RESPONSIVE ── */
+        @media(max-width:768px){
+            .sidebar-toggle{display:flex}
+            .sidebar{transform:translateX(-100%)}
+            .sidebar.open{transform:translateX(0)}
+            .main{margin-left:0;padding:24px 16px;padding-top:72px}
+            .stats-grid{grid-template-columns:1fr}
+            .profile-card{flex-direction:column;text-align:center}
+            .upgrade-banner{flex-direction:column;text-align:center}
+        }
     </style>
 </head>
 <body>
 <div class="layout">
 
+    <!-- ── MOBILE SIDEBAR TOGGLE ── -->
+    <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">☰</button>
+
     <!-- SIDEBAR -->
-    <div class="sidebar">
+    <div class="sidebar" id="sidebar">
         <div class="sidebar-logo">
-            <div class="sidebar-logo-icon">📄</div>
+            <div class="sidebar-logo-icon">G</div>
             <div class="sidebar-logo-text">Genify</div>
         </div>
         <div class="sidebar-nav">
@@ -59,11 +113,11 @@
             <a href="/profile" class="nav-item active">👤 Profile <span class="nav-dot"></span></a>
             <a href="/pricing" class="nav-item">💰 Pricing</a>
             <a href="/settings" class="nav-item">⚙️ Settings</a>
-            <a href="/logout" class="nav-item" style="color:#EF4444">🚪 Logout</a>
+            <a href="#" class="nav-item" style="color:#EF4444" onclick="confirmLogout()">🚪 Logout</a>
         </div>
         <div class="sidebar-bottom">
             <div class="user-pill">
-                <div class="user-avatar">{{ user.name[0] }}</div>
+                <div class="user-avatar">{{ user.name[0] | upper if user.name else '?' }}</div>
                 <div>
                     <div class="user-name">{{ user.name }}</div>
                     <div class="user-plan">{{ user.plan }} plan</div>
@@ -79,31 +133,46 @@
 
         <!-- Profile Card -->
         <div class="profile-card">
-            <div class="profile-avatar">{{ user.name[0] }}</div>
+            <div class="profile-avatar">{{ user.name[0] | upper if user.name else '?' }}</div>
             <div>
                 <div class="profile-name">{{ user.name }}</div>
                 <div class="profile-email">{{ user.email }}</div>
-                <span class="plan-badge">{{ user.plan }} Plan</span>
+                {% if user.is_pro %}
+                <span class="plan-badge-pro">⚡ Pro Plan</span>
+                {% elif user.is_starter %}
+                <span class="plan-badge-starter">📦 Starter Plan</span>
+                {% else %}
+                <span class="plan-badge-free">Free Plan</span>
+                {% endif %}
             </div>
         </div>
 
         <!-- Stats -->
         <div class="stats-grid">
             <div class="stat-card">
+                <div class="stat-icon">📄</div>
                 <div class="stat-num">{{ user.papers }}</div>
                 <div class="stat-label">Papers generated</div>
             </div>
             <div class="stat-card">
-                <div class="stat-num">{{ user.plan }}</div>
-                <div class="stat-label">Current plan</div>
+                <div class="stat-icon">📥</div>
+                {% if user.is_pro %}
+                <div class="stat-num">∞</div>
+                {% elif user.is_starter %}
+                <div class="stat-num">{{ 30 - (user.papers_month if user.papers_month is defined else 0) }}</div>
+                {% else %}
+                <div class="stat-num">{{ 5 - user.papers if user.papers < 5 else 0 }}</div>
+                {% endif %}
+                <div class="stat-label">{% if user.is_starter %}Papers left this month{% else %}Papers remaining{% endif %}</div>
             </div>
             <div class="stat-card">
+                <div class="stat-icon">📅</div>
                 <div class="stat-num">{{ user.joined }}</div>
                 <div class="stat-label">Member since</div>
             </div>
         </div>
 
-        <!-- Account Info -->
+        <!-- Account Details -->
         <div class="info-card">
             <div class="info-title">Account Details</div>
             <div class="info-row">
@@ -115,24 +184,123 @@
                 <span class="info-val">{{ user.email }}</span>
             </div>
             <div class="info-row">
-                <span class="info-key">Plan</span>
-                <span class="info-val">{{ user.plan }}</span>
+                <span class="info-key">Current plan</span>
+                <span class="info-val">
+                    {% if user.is_pro %}
+                    <span style="color:#4361EE">⚡ Pro</span>
+                    {% elif user.is_starter %}
+                    <span style="color:#F59E0B">📦 Starter</span>
+                    {% else %}
+                    <span style="color:#8B8FA8">Free</span>
+                    {% endif %}
+                </span>
             </div>
             <div class="info-row">
-                <span class="info-key">Member since</span>
-                <span class="info-val">{{ user.joined }}</span>
-            </div>
-            <div class="info-row">
-                <span class="info-key">Papers generated</span>
+                <span class="info-key">Papers generated (total)</span>
                 <span class="info-val">{{ user.papers }}</span>
             </div>
-            <div class="nav-btns">
-                <a href="/pricing" class="upgrade-btn">⚡Upgrade to Grow</a>
+            {% if user.institute_name %}
+            <div class="info-row">
+                <span class="info-key">Institute name</span>
+                <span class="info-val">{{ user.institute_name }}</span>
             </div>
-            
+            {% endif %}
+            {% if user.default_subject %}
+            <div class="info-row">
+                <span class="info-key">Default subject</span>
+                <span class="info-val">{{ user.default_subject }}</span>
+            </div>
+            {% endif %}
+            {% if user.default_class %}
+            <div class="info-row">
+                <span class="info-key">Default class</span>
+                <span class="info-val">{{ user.default_class }}</span>
+            </div>
+            {% endif %}
+            {% if user.default_language %}
+            <div class="info-row">
+                <span class="info-key">Default language</span>
+                <span class="info-val">{{ user.default_language }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Upgrade Banner (for Free/Starter users) -->
+        {% if not user.is_pro %}
+        <div class="upgrade-banner">
+            <div class="upgrade-banner-text">
+                <h3>⚡ Want more power?</h3>
+                <p>Upgrade to Pro for unlimited papers, Hindi support, and institute branding.</p>
+            </div>
+            <a href="/pricing" class="upgrade-banner-btn">Upgrade Now</a>
+        </div>
+        {% endif %}
+
+        <!-- Quick Actions -->
+        <div class="quick-actions" style="margin-top:20px">
+            <a href="/settings" class="action-btn secondary">⚙️ Edit Settings</a>
+            <a href="/pricing" class="action-btn secondary">💰 View Plans</a>
+            <a href="/dashboard" class="action-btn secondary">📄 Go to Dashboard</a>
+        </div>
+    </div>
+</div>
+
+<!-- ── LOGOUT MODAL ── -->
+<div class="modal-overlay" id="logoutModal" onclick="closeLogoutOutside(event)">
+    <div class="modal">
+        <div style="font-size:40px;margin-bottom:16px">🚪</div>
+        <h2 style="font-size:20px;font-weight:800;color:#fff;margin-bottom:8px">Logout of Genify?</h2>
+        <p style="font-size:13px;color:#8B8FA8;margin-bottom:24px;line-height:1.6">You will need to sign in again with Google to access your dashboard.</p>
+        <div style="display:flex;gap:10px">
+            <button onclick="closeLogoutModal()" style="flex:1;padding:12px;border-radius:10px;background:#1E1E2E;border:1px solid #2D2D3D;color:#E2E8F0;font-size:14px;font-weight:700;cursor:pointer">
+                ← Stay
+            </button>
+            <button onclick="window.location.href='/logout'" style="flex:1;padding:12px;border-radius:10px;background:#EF4444;border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer">
+                Yes, logout
             </button>
         </div>
     </div>
 </div>
+
+<!-- ── TOAST ── -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══ JAVASCRIPT ═══ -->
+<script>
+    // ── MOBILE SIDEBAR ──
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+    }
+
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', function(e) {
+        var sidebar = document.getElementById('sidebar');
+        var toggle = document.querySelector('.sidebar-toggle');
+        if (sidebar.classList.contains('open') && !sidebar.contains(e.target) && !toggle.contains(e.target)) {
+            sidebar.classList.remove('open');
+        }
+    });
+
+    // ── TOAST ──
+    function showToast(msg) {
+        var toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.className = 'toast show';
+        setTimeout(function() { toast.className = 'toast'; }, 2500);
+    }
+
+    // ── LOGOUT ──
+    function confirmLogout() {
+        document.getElementById('logoutModal').classList.add('show');
+    }
+    function closeLogoutModal() {
+        document.getElementById('logoutModal').classList.remove('show');
+    }
+    function closeLogoutOutside(e) {
+        if (e.target === document.getElementById('logoutModal')) {
+            closeLogoutModal();
+        }
+    }
+</script>
 </body>
 </html>

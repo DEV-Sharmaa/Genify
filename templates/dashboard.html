@@ -1,14 +1,17 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Genify — Dashboard</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234361EE'/><text x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='18' font-weight='bold' font-family='sans-serif'>G</text></svg>">
     <style>
         *{box-sizing:border-box;margin:0;padding:0}
         body{font-family:'Segoe UI',Arial,sans-serif;background:#0A0A0F;color:#E2E8F0;min-height:100vh}
         .layout{display:flex;min-height:100vh}
 
         /* ── SIDEBAR ── */
-        .sidebar{width:240px;background:#0F0F1A;border-right:1px solid #1E1E2E;padding:20px 0;position:fixed;height:100vh;display:flex;flex-direction:column;z-index:50}
+        .sidebar{width:240px;background:#0F0F1A;border-right:1px solid #1E1E2E;padding:20px 0;position:fixed;height:100vh;display:flex;flex-direction:column;z-index:50;transition:transform .3s}
         .sidebar-logo{display:flex;align-items:center;gap:10px;padding:0 20px 24px;border-bottom:1px solid #1E1E2E}
         .sidebar-logo-icon{width:32px;height:32px;background:linear-gradient(135deg,#4361EE,#7B2FBE);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px}
         .sidebar-logo-text{font-size:17px;font-weight:800;color:#fff}
@@ -25,23 +28,28 @@
         .user-info-name{font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .user-info-plan{font-size:11px;color:#8B8FA8}
 
+        /* ── MOBILE SIDEBAR TOGGLE ── */
+        .sidebar-toggle{display:none;position:fixed;top:16px;left:16px;z-index:100;width:40px;height:40px;background:#1E1E2E;border:1px solid #2D2D3D;border-radius:10px;color:#fff;font-size:18px;cursor:pointer;align-items:center;justify-content:center}
+
         /* ── MAIN ── */
         .main{margin-left:240px;flex:1;padding:40px;min-height:100vh}
 
         /* ── TOPBAR ── */
-        .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+        .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px}
         .topbar-left h1{font-size:24px;font-weight:800;color:#fff;letter-spacing:-0.5px;margin-bottom:4px}
         .topbar-left p{font-size:14px;color:#8B8FA8}
         .plan-badge-pro{background:linear-gradient(135deg,#4361EE,#7B2FBE);color:#fff;font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px}
+        .plan-badge-starter{background:#F59E0B;color:#000;font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px}
         .plan-badge-free{background:#1E1E2E;border:1px solid #2D2D3D;color:#8B8FA8;font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px}
 
-        /* ── FREE LIMIT BAR ── */
+        /* ── LIMIT BAR ── */
         .limit-bar{background:#1E1E2E;border:1px solid #2D2D3D;border-radius:12px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px}
-        .limit-bar-left{display:flex;align-items:center;gap:10px}
+        .limit-bar-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
         .limit-bar-left span{font-size:13px;color:#8B8FA8}
         .limit-bar-left strong{color:#E2E8F0}
         .limit-progress{flex:1;height:6px;background:#0A0A0F;border-radius:3px;overflow:hidden;max-width:200px}
         .limit-progress-fill{height:100%;background:linear-gradient(90deg,#4361EE,#7B2FBE);border-radius:3px;transition:width .3s}
+        .limit-progress-fill.warning{background:linear-gradient(90deg,#F59E0B,#EF4444)}
         .upgrade-btn-small{padding:7px 16px;border-radius:8px;background:linear-gradient(135deg,#4361EE,#7B2FBE);color:#fff;font-size:12px;font-weight:700;border:none;cursor:pointer;white-space:nowrap}
 
         /* ── UPGRADE MODAL ── */
@@ -81,6 +89,7 @@
         /* ── UPLOAD ── */
         .upload-zone{border:1.5px dashed #2D2D3D;border-radius:12px;padding:28px;text-align:center;cursor:pointer;background:#0A0A0F;transition:all .2s}
         .upload-zone:hover{border-color:#4361EE;background:#4361EE08}
+        .upload-zone.drag{border-color:#4361EE;background:#4361EE08}
         .upload-zone.done{border-color:#27AE60;background:#27AE6008}
         .upload-icon{font-size:30px;margin-bottom:10px}
         .upload-title{font-size:15px;font-weight:600;color:#E2E8F0;margin-bottom:4px}
@@ -132,6 +141,8 @@
         .progress-wrap{display:none;margin-top:12px}
         .progress-bar{width:100%;height:4px;background:#1E1E2E;border-radius:2px;overflow:hidden}
         .progress-fill{height:100%;background:linear-gradient(90deg,#4361EE,#7B2FBE);border-radius:2px;transition:width .3s;width:0%}
+        .progress-fill.indeterminate{animation:indeterminate 1.5s ease-in-out infinite;background:linear-gradient(90deg,transparent,#4361EE,transparent)}
+        @keyframes indeterminate{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
         .progress-text{font-size:12px;color:#8B8FA8;text-align:center;margin-top:8px}
 
         /* ── ERROR ── */
@@ -139,24 +150,76 @@
 
         /* ── RESULT ── */
         .result-section{display:none;margin-top:8px}
-        .success-bar{background:#27AE6011;border:1px solid #27AE6033;border-radius:12px;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+        .success-bar{background:#27AE6011;border:1px solid #27AE6033;border-radius:12px;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
         .success-bar span{font-weight:700;color:#27AE60;font-size:14px}
         .action-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
         .action-btn{padding:9px 18px;border-radius:9px;border:1px solid #2D2D3D;background:#1A1A2E;color:#E2E8F0;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
         .action-btn:hover{background:#1E1E2E;border-color:#4361EE;color:#4361EE}
         .action-btn.copy-done{border-color:#27AE60;color:#27AE60}
-        .paper-output{background:#0A0A0F;border:1px solid #1E1E2E;border-radius:12px;padding:20px 24px;font-family:'Courier New',monospace;font-size:12.5px;line-height:1.85;color:#C8D3E0;white-space:pre-wrap;word-break:break-word;max-height:520px;overflow-y:auto}
+        .paper-output{background:#0A0A0F;border:1px solid #1E1E2E;border-radius:12px;padding:20px 24px;font-family:'Courier New',monospace;font-size:12.5px;line-height:1.85;color:#C8D3E0;white-space:pre-wrap;word-break:break-word;max-height:520px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#2D2D3D #0A0A0F}
         .paper-output::-webkit-scrollbar{width:4px}
         .paper-output::-webkit-scrollbar-thumb{background:#2D2D3D;border-radius:2px}
         .new-paper-btn{width:100%;padding:12px;border-radius:10px;border:1px solid #2D2D3D;background:transparent;color:#8B8FA8;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;margin-top:10px}
         .new-paper-btn:hover{border-color:#4361EE;color:#4361EE}
+
+        /* ── TOAST NOTIFICATION ── */
+        .toast{position:fixed;bottom:24px;right:24px;background:#0F0F1A;border:1px solid #2D2D3D;border-radius:12px;padding:14px 20px;font-size:13px;color:#E2E8F0;z-index:2000;transform:translateY(100px);opacity:0;transition:all .3s;display:flex;align-items:center;gap:10px;box-shadow:0 8px 30px rgba(0,0,0,0.4)}
+        .toast.show{transform:translateY(0);opacity:1}
+        .toast.success{border-color:#27AE6044}
+        .toast.error{border-color:#EF444444}
+
+        /* ── RESPONSIVE ── */
+        @media(max-width:768px){
+            .sidebar-toggle{display:flex}
+            .sidebar{transform:translateX(-100%)}
+            .sidebar.open{transform:translateX(0)}
+            .main{margin-left:0;padding:24px 16px;padding-top:72px}
+            .stats-row{grid-template-columns:1fr}
+            .grid2{grid-template-columns:1fr}
+            .topbar{flex-direction:column;align-items:flex-start}
+        }
+        /* ═══ SPLASH SCREEN ═══ */
+        .genify-splash{position:fixed;top:0;left:0;width:100vw;height:100vh;background:#0A0A0F;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;transition:opacity .6s ease,visibility .6s ease}
+        .genify-splash.fade-out{opacity:0;visibility:hidden;pointer-events:none}
+        .genify-splash-logo{width:80px;height:80px;margin-bottom:20px;animation:splashPulse 2s ease-in-out infinite}
+        .genify-splash-logo img{width:100%;height:100%}
+        .genify-splash-title{font-size:44px;font-weight:900;color:#fff;letter-spacing:4px;text-transform:uppercase;margin-bottom:8px;animation:splashSlideUp .7s ease forwards;text-shadow:0 2px 30px rgba(67,97,238,0.5)}
+        .genify-splash-sub{font-size:15px;color:rgba(255,255,255,0.5);letter-spacing:1px;margin-bottom:36px;animation:splashSlideUp .7s ease .1s forwards;opacity:0}
+        .genify-splash-loader{display:flex;gap:8px;animation:splashSlideUp .7s ease .2s forwards;opacity:0}
+        .genify-splash-dot{width:10px;height:10px;border-radius:50%;background:#4361EE;animation:splashBounce 1.4s ease-in-out infinite}
+        .genify-splash-dot:nth-child(2){animation-delay:.2s}
+        .genify-splash-dot:nth-child(3){animation-delay:.4s}
+        .genify-splash-footer{position:absolute;bottom:40px;font-size:13px;color:rgba(255,255,255,0.3);letter-spacing:2px;text-transform:uppercase;animation:splashFadeIn 1s ease 1s forwards;opacity:0}
+        @keyframes splashPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+        @keyframes splashSlideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes splashBounce{0%,80%,100%{transform:scale(0);opacity:.5}40%{transform:scale(1);opacity:1}}
+        @keyframes splashFadeIn{from{opacity:0}to{opacity:1}}
     </style>
 </head>
 <body>
+
+<!-- ═══ SPLASH SCREEN ═══ -->
+<div class="genify-splash" id="genifySplash">
+    <div class="genify-splash-logo">
+        <img src="c:\Users\seych\Documents\logo.png.jpeg" alt="Genify" style="width:100%;height:100%">
+    </div>
+    <h1 class="genify-splash-title">Genify</h1>
+    <p class="genify-splash-sub">AI-Powered Question Paper Generator</p>
+    <div class="genify-splash-loader">
+        <span class="genify-splash-dot"></span>
+        <span class="genify-splash-dot"></span>
+        <span class="genify-splash-dot"></span>
+    </div>
+    <p class="genify-splash-footer">From Genify AI</p>
+</div>
+
 <div class="layout">
 
+    <!-- ── MOBILE SIDEBAR TOGGLE ── -->
+    <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">☰</button>
+
     <!-- ── SIDEBAR ── -->
-    <div class="sidebar">
+    <div class="sidebar" id="sidebar">
         <div class="sidebar-logo">
             <div class="sidebar-logo-icon">G</div>
             <div class="sidebar-logo-text">Genify</div>
@@ -173,7 +236,7 @@
         </div>
         <div class="sidebar-bottom">
             <div class="user-pill">
-                <div class="user-avatar">{{ user.name[0] }}</div>
+                <div class="user-avatar">{{ user.name[0] | upper if user.name else '?' }}</div>
                 <div>
                     <div class="user-info-name">{{ user.name }}</div>
                     <div class="user-info-plan">{{ user.plan }} plan</div>
@@ -188,26 +251,36 @@
         <!-- Topbar -->
         <div class="topbar">
             <div class="topbar-left">
-                <h1>Welcome back, {{ user.name.split()[0] }} 👋</h1>
-                <p>Generate curriculum-aligned question papers in 20 seconds</p>
+                <h1>Welcome back, {{ (user.name or 'User').split()[0] }} 👋</h1>
+                <p>Generate curriculum-aligned question papers in seconds</p>
             </div>
             {% if user.is_pro %}
                 <span class="plan-badge-pro">⚡ Pro Plan</span>
+            {% elif user.is_starter %}
+                <span class="plan-badge-starter">📦 Starter Plan</span>
             {% else %}
                 <span class="plan-badge-free">Free Plan</span>
             {% endif %}
         </div>
 
-        <!-- Free limit bar — only for free users -->
+        <!-- Limit bar — for Free and Starter users -->
         {% if not user.is_pro %}
         <div class="limit-bar">
             <div class="limit-bar-left">
+                {% if user.is_starter %}
+                <span>Papers used: <strong>{{ user.papers_month }} / 30</strong> this month</span>
+                {% set progress = (user.papers_month / 30 * 100) | int %}
+                {% set is_warning = progress >= 70 %}
+                {% else %}
                 <span>Papers used: <strong>{{ user.papers }} / 5</strong></span>
+                {% set progress = (user.papers / 5 * 100) | int %}
+                {% set is_warning = progress >= 60 %}
+                {% endif %}
                 <div class="limit-progress">
-                    <div class="limit-progress-fill" style="width: {{ (user.papers / 10 * 100)|int }}%"></div>
+                    <div class="limit-progress-fill{% if is_warning %} warning{% endif %}" style="width: {{ progress }}%"></div>
                 </div>
             </div>
-            <button class="upgrade-btn-small" onclick="showUpgradeModal()">⚡ Upgrade to Pro</button>
+            <button class="upgrade-btn-small" onclick="showUpgradeModal()">⚡ Upgrade</button>
         </div>
         {% endif %}
 
@@ -216,22 +289,22 @@
             <div class="stat-card">
                 <div class="stat-icon blue">⚡</div>
                 <div>
-                    <div class="stat-num">20s</div>
-                    <div class="stat-label">Generation time</div>
+                    <div class="stat-num">{{ user.papers }}</div>
+                    <div class="stat-label">Total papers</div>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon purple">📄</div>
                 <div>
-                    <div class="stat-num">{{ user.papers }}</div>
-                    <div class="stat-label">Papers generated</div>
+                    <div class="stat-num">{% if user.is_pro %}∞{% elif user.is_starter %}{{ 30 - user.papers_month }}{% else %}{{ 5 - user.papers }}{% endif %}</div>
+                    <div class="stat-label">{% if user.is_starter %}Papers left (this month){% else %}Papers remaining{% endif %}</div>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon green">✅</div>
+                <div class="stat-icon green">💰</div>
                 <div>
-                    <div class="stat-num">{% if user.is_pro %}∞{% else %}{{ 5 - user.papers }}{% endif %}</div>
-                    <div class="stat-label">Papers remaining</div>
+                    <div class="stat-num">{{ user.plan }}</div>
+                    <div class="stat-label">Current plan</div>
                 </div>
             </div>
         </div>
@@ -272,29 +345,32 @@
                 </div>
                 <div class="grid2">
                     <div>
-                        <label class="field-label">Subject</label>
+                        <label class="field-label" for="subject">Subject</label>
                         <select id="subject" onchange="updateSummary()">
-                            <option>Mathematics</option>
-                            <option>Science</option>
-                            <option>Social Science</option>
-                            <option>English</option>
-                            <option>Hindi</option>
+                            <option value="Mathematics">Mathematics</option>
+                            <option value="Science">Science</option>
+                            <option value="Social Science">Social Science</option>
+                            <option value="English">English</option>
+                            <option value="Hindi">Hindi</option>
+                            <option value="Computer Science">Computer Science</option>
                         </select>
                     </div>
                     <div>
-                        <label class="field-label">Class</label>
+                        <label class="field-label" for="cls">Class</label>
                         <select id="cls" onchange="updateSummary()">
-                            <option>Class 6</option>
-                            <option>Class 7</option>
-                            <option>Class 8</option>
-                            <option>Class 9</option>
-                            <option>Class 10</option>
+                            <option value="Class 6">Class 6</option>
+                            <option value="Class 7">Class 7</option>
+                            <option value="Class 8">Class 8</option>
+                            <option value="Class 9">Class 9</option>
+                            <option value="Class 10">Class 10</option>
+                            <option value="Class 11">Class 11</option>
+                            <option value="Class 12">Class 12</option>
                         </select>
                     </div>
                     <div>
                         <label class="field-label">Difficulty Level</label>
                         <div class="diff-row">
-                            <button class="diff-btn easy" onclick="setDiff('easy',this)">Easy</button>
+                            <button class="diff-btn" onclick="setDiff('easy',this)">Easy</button>
                             <button class="diff-btn medium" onclick="setDiff('medium',this)">Medium</button>
                             <button class="diff-btn" onclick="setDiff('hard',this)">Hard</button>
                         </div>
@@ -340,15 +416,15 @@
 
             <div class="progress-wrap" id="progressWrap">
                 <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
+                    <div class="progress-fill indeterminate" id="progressFill"></div>
                 </div>
-                <div class="progress-text" id="progressText">Generating your paper...</div>
+                <div class="progress-text" id="progressText">Generating your paper... This may take a moment.</div>
             </div>
 
-            <button class="gen-btn" id="genBtn" onclick="generate()" disabled>
+            <button class="gen-btn" id="genBtn" onclick="generate()" disabled aria-label="Generate question paper">
                 ✨ Generate Question Paper
             </button>
-            <div class="gen-hint">Upload a PDF above to enable · Takes ~15 seconds</div>
+            <div class="gen-hint">Upload a PDF above to enable · Takes 15–45 seconds</div>
         </div>
 
         <!-- Result Section -->
@@ -376,16 +452,17 @@
     <div class="modal">
         <div class="modal-icon">⚡</div>
         <h2>Upgrade to Pro</h2>
-        <p>You've hit the free limit or tried a Pro feature. Upgrade to unlock everything — unlimited papers, Hindi support, and more.</p>
+        <p>Unlock unlimited papers, Hindi support, institute branding, and priority generation.</p>
         <div class="modal-features">
             <div class="modal-feature">Unlimited question papers</div>
             <div class="modal-feature">Hindi + English language</div>
             <div class="modal-feature">All subjects and classes</div>
             <div class="modal-feature">PDF download and print</div>
+            <div class="modal-feature">Institute branding on papers</div>
             <div class="modal-feature">Priority support</div>
         </div>
-        <div class="modal-price">₹999 <span>/ month</span></div>
-        <p style="font-size:12px;color:#8B8FA8;margin-bottom:16px">Pay via GPay / Cash · We activate manually within minutes</p>
+        <div class="modal-price">₹799 <span>/ month</span></div>
+        <p style="font-size:12px;color:#8B8FA8;margin-bottom:16px">Pay via GPay / UPI / Cash · We activate within minutes</p>
         <button class="modal-whatsapp" onclick="contactWhatsApp()">
             💬 Contact us on WhatsApp to upgrade
         </button>
@@ -393,12 +470,66 @@
     </div>
 </div>
 
+<!-- ── LOGOUT MODAL ── -->
+<div class="modal-overlay" id="logoutModal" onclick="closeLogoutOutside(event)">
+    <div class="modal" style="max-width:380px;padding:36px">
+        <div style="font-size:40px;margin-bottom:16px">🚪</div>
+        <h2 style="font-size:20px;font-weight:800;color:#fff;margin-bottom:8px">Logout of Genify?</h2>
+        <p style="font-size:13px;color:#8B8FA8;margin-bottom:24px;line-height:1.6">You will need to sign in again with Google to access your dashboard.</p>
+        <div style="display:flex;gap:10px">
+            <button onclick="closeLogoutModal()" style="flex:1;padding:12px;border-radius:10px;background:#1E1E2E;border:1px solid #2D2D3D;color:#E2E8F0;font-size:14px;font-weight:700;cursor:pointer">
+                ← Stay
+            </button>
+            <button onclick="window.location.href='/logout'" style="flex:1;padding:12px;border-radius:10px;background:#EF4444;border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer">
+                Yes, logout
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ── TOAST ── -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══ JAVASCRIPT ═══ -->
 <script>
     let selectedFile = null;
     let selectedDiff = 'medium';
     let selectedLang = 'English';
     let paperText    = '';
     let isPro        = {{ 'true' if user.is_pro else 'false' }};
+    let isStarter    = {{ 'true' if user.is_starter else 'false' }};
+
+    // ── MOBILE SIDEBAR ──
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+    }
+
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', function(e) {
+        const sidebar = document.getElementById('sidebar');
+        const toggle = document.querySelector('.sidebar-toggle');
+        if (sidebar.classList.contains('open') && !sidebar.contains(e.target) && !toggle.contains(e.target)) {
+            sidebar.classList.remove('open');
+        }
+    });
+
+    // ── TOAST NOTIFICATION ──
+    function showToast(msg, type) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.className = 'toast ' + type + ' show';
+        setTimeout(function() { toast.classList.remove('show'); }, 2500);
+    }
+
+    // ── KEYBOARD SHORTCUT: Ctrl+Enter to generate ──
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'Enter') {
+            const genBtn = document.getElementById('genBtn');
+            if (!genBtn.disabled && selectedFile) {
+                generate();
+            }
+        }
+    });
 
     // ── FILE ──
     function fileSelected(input) {
@@ -410,7 +541,10 @@
         if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
     }
     function loadFile(file) {
-        if (file.type !== 'application/pdf') { showError('Please upload a PDF file only.'); return; }
+        if (file.type !== 'application/pdf') {
+            showError('Please upload a PDF file only.');
+            return;
+        }
         selectedFile = file;
         document.getElementById('uploadZone').classList.add('done');
         document.getElementById('uploadIcon').textContent  = '✅';
@@ -419,6 +553,7 @@
         document.getElementById('uploadSub').innerHTML     = 'Ready · <span class="remove-link" onclick="removeFile(event)">Remove</span>';
         document.getElementById('genBtn').disabled = false;
         updateSummary();
+        showToast('PDF uploaded successfully!', 'success');
     }
     function removeFile(e) {
         e.stopPropagation();
@@ -455,40 +590,38 @@
         const m = document.getElementById('marks').value;
         const d = selectedDiff.charAt(0).toUpperCase() + selectedDiff.slice(1);
         document.getElementById('summary').innerHTML =
-            `<span>${s}</span> · <span>${c}</span> · <span>${d}</span> · <span>${m} Marks</span> · ~${Math.round(m*1.5)} min`;
+            '<span>' + s + '</span> · <span>' + c + '</span> · <span>' + d + '</span> · <span>' + m + ' Marks</span> · ~' + Math.round(m * 1.5) + ' min';
     }
 
-    // ── PROGRESS ──
-    let progressInterval = null;
+    // ── PROGRESS (indeterminate — shows real loading state) ──
     function startProgress() {
-        const fill  = document.getElementById('progressFill');
-        const text  = document.getElementById('progressText');
+        var fill  = document.getElementById('progressFill');
+        var text  = document.getElementById('progressText');
         document.getElementById('progressWrap').style.display = 'block';
-        const steps = ['Reading your PDF...','Analysing chapter content...','Building Section A...','Building Section B...','Building Section C...','Formatting paper...'];
-        let w = 0, i = 0;
-        progressInterval = setInterval(() => {
-            w += 16; fill.style.width = Math.min(w, 90) + '%';
-            text.textContent = steps[i] || 'Almost done...'; i++;
-            if (w >= 90) clearInterval(progressInterval);
-        }, 400);
+        fill.className = 'progress-fill indeterminate';
+        text.textContent = 'Generating your paper... This may take 15–45 seconds.';
     }
     function finishProgress() {
-        clearInterval(progressInterval);
-        document.getElementById('progressFill').style.width = '100%';
+        var fill = document.getElementById('progressFill');
+        fill.classList.remove('indeterminate');
+        fill.style.width = '100%';
         document.getElementById('progressText').textContent = 'Done!';
-        setTimeout(() => document.getElementById('progressWrap').style.display = 'none', 500);
+        setTimeout(function() {
+            document.getElementById('progressWrap').style.display = 'none';
+            fill.style.width = '0%';
+        }, 500);
     }
 
     // ── GENERATE ──
     async function generate() {
         if (!selectedFile) return;
         hideError();
-        const btn = document.getElementById('genBtn');
+        var btn = document.getElementById('genBtn');
         btn.disabled = true;
         btn.textContent = '⚙️ Generating...';
         startProgress();
 
-        const formData = new FormData();
+        var formData = new FormData();
         formData.append('pdf',        selectedFile);
         formData.append('subject',    document.getElementById('subject').value);
         formData.append('cls',        document.getElementById('cls').value);
@@ -497,8 +630,8 @@
         formData.append('language',   selectedLang);
 
         try {
-            const res  = await fetch('/generate', { method: 'POST', body: formData });
-            const data = await res.json();
+            var res  = await fetch('/generate', { method: 'POST', body: formData });
+            var data = await res.json();
             finishProgress();
 
             if (data.success) {
@@ -506,37 +639,49 @@
                 showResult(data);
             } else if (data.error === 'free_limit_reached') {
                 showUpgradeModal();
-                btn.disabled = false;
-                btn.textContent = '✨ Generate Question Paper';
-            } else if (data.error === 'hindi_pro_only') {
+                resetGenBtn();
+            } else if (data.error === 'starter_limit_reached') {
+                showToast('Monthly limit reached! Upgrade to Pro for unlimited papers.', 'error');
                 showUpgradeModal();
-                btn.disabled = false;
-                btn.textContent = '✨ Generate Question Paper';
+                resetGenBtn();
+            } else if (data.error === 'hindi_pro_only') {
+                showToast('Hindi language requires Pro plan.', 'error');
+                showUpgradeModal();
+                resetGenBtn();
             } else {
                 showError(data.error || 'Something went wrong.');
-                btn.disabled = false;
-                btn.textContent = '✨ Generate Question Paper';
+                resetGenBtn();
             }
         } catch (err) {
             finishProgress();
-            showError('Network error. Please try again.');
-            btn.disabled = false;
-            btn.textContent = '✨ Generate Question Paper';
+            showError('Network error. Please check your connection and try again.');
+            resetGenBtn();
         }
+    }
+
+    function resetGenBtn() {
+        var btn = document.getElementById('genBtn');
+        btn.disabled = false;
+        btn.textContent = '✨ Generate Question Paper';
     }
 
     // ── SHOW RESULT ──
     function showResult(data) {
-        const s = document.getElementById('subject').value;
-        const c = document.getElementById('cls').value;
-        const m = document.getElementById('marks').value;
+        var s = document.getElementById('subject').value;
+        var c = document.getElementById('cls').value;
+        var m = document.getElementById('marks').value;
         document.getElementById('formSection').style.display   = 'none';
         document.getElementById('resultSection').style.display = 'block';
         document.getElementById('paperOutput').textContent     = paperText;
-        document.getElementById('resultLabel').textContent     = `✅ ${s} · ${c} · ${m} Marks`;
-        if (!isPro && data.papers_left) {
-            document.getElementById('papersLeftLabel').textContent = `${data.papers_left} papers remaining`;
+        document.getElementById('resultLabel').textContent     = '✅ ' + s + ' · ' + c + ' · ' + m + ' Marks';
+        if (!isPro && data.papers_left !== undefined) {
+            document.getElementById('papersLeftLabel').textContent = data.papers_left + ' papers remaining';
+        } else if (isPro) {
+            document.getElementById('papersLeftLabel').textContent = '∞ Unlimited';
         }
+        showToast('Paper generated successfully!', 'success');
+        // Scroll to result
+        document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     // ── RESET ──
@@ -553,29 +698,75 @@
         document.getElementById('genBtn').textContent = '✨ Generate Question Paper';
         document.getElementById('pdfInput').value     = '';
         hideError();
+        // Scroll back to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     // ── COPY ──
     function copyPaper() {
-        navigator.clipboard.writeText(paperText);
-        const btn = document.getElementById('copyBtn');
-        btn.textContent = '✅ Copied!';
-        btn.classList.add('copy-done');
-        setTimeout(() => { btn.textContent = '📋 Copy'; btn.classList.remove('copy-done'); }, 2000);
+        navigator.clipboard.writeText(paperText).then(function() {
+            var btn = document.getElementById('copyBtn');
+            btn.textContent = '✅ Copied!';
+            btn.classList.add('copy-done');
+            showToast('Paper copied to clipboard!', 'success');
+            setTimeout(function() { btn.textContent = '📋 Copy'; btn.classList.remove('copy-done'); }, 2000);
+        }).catch(function() {
+            showToast('Failed to copy. Try again.', 'error');
+        });
     }
 
-    // ── DOWNLOAD / PRINT ──
-    function downloadPaper() {
-        const s   = document.getElementById('subject').value;
-        const c   = document.getElementById('cls').value;
-        const win = window.open('', '_blank');
-        win.document.write(`<html><head><title>Question Paper — ${s} — ${c}</title>
-        <style>body{font-family:'Courier New',monospace;font-size:13px;line-height:1.8;padding:48px;color:#000;white-space:pre-wrap;max-width:800px;margin:0 auto}</style>
-        </head><body>${paperText.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</body></html>`);
+    // ── DOWNLOAD PDF ──
+    async function downloadPaper() {
+        var s = document.getElementById('subject').value;
+        var c = document.getElementById('cls').value;
+        var m = document.getElementById('marks').value;
+
+        try {
+            var res = await fetch('/download-paper', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    paper:   paperText,
+                    subject: s,
+                    cls:     c,
+                    marks:   m
+                })
+            });
+
+            if (!res.ok) {
+                var errData = await res.json();
+                showToast(errData.error || 'Download failed.', 'error');
+                return;
+            }
+
+            var blob = await res.blob();
+            var url  = URL.createObjectURL(blob);
+            var a    = document.createElement('a');
+            a.href     = url;
+            a.download = 'genify_' + s.replace(/\s/g, '_') + '_' + c.replace(/\s/g, '_') + '_' + m + 'marks.pdf';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('PDF downloaded!', 'success');
+        } catch (err) {
+            showToast('Download failed. Please try again.', 'error');
+        }
+    }
+
+    // ── PRINT ──
+    function printPaper() {
+        var s = document.getElementById('subject').value;
+        var c = document.getElementById('cls').value;
+        var m = document.getElementById('marks').value;
+        var win = window.open('', '_blank');
+        win.document.write('<html><head><title>Question Paper — ' + s + ' — ' + c + ' — ' + m + ' Marks</title>' +
+            '<style>body{font-family:"Courier New",monospace;font-size:13px;line-height:1.8;padding:48px;color:#000;white-space:pre-wrap;max-width:800px;margin:0 auto}</style>' +
+            '</head><body>' + paperText.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</body></html>');
         win.document.close();
+        win.focus();
         win.print();
     }
-    function printPaper() { downloadPaper(); }
 
     // ── UPGRADE MODAL ──
     function showUpgradeModal() {
@@ -590,46 +781,49 @@
         window.open('https://wa.me/919625412098?text=Hi! I want to upgrade to Genify Pro.', '_blank');
     }
 
-    // ── ERROR ──
-    function showError(msg) {
-        const box = document.getElementById('errorBox');
-        box.textContent = '⚠️ ' + msg;
-        box.style.display = 'block';
-    }
-    function hideError() {
-        document.getElementById('errorBox').style.display = 'none';
-    }
-</script>
-<!-- LOGOUT MODAL -->
-<div class="modal-overlay" id="logoutModal" onclick="closeLogoutOutside(event)" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center">
-    <div style="background:#0F0F1A;border:1px solid #2D2D3D;border-radius:20px;padding:36px;max-width:380px;width:90%;text-align:center">
-        <div style="font-size:40px;margin-bottom:16px">🚪</div>
-        <h2 style="font-size:20px;font-weight:800;color:#fff;margin-bottom:8px">Logout of Genify?</h2>
-        <p style="font-size:13px;color:#8B8FA8;margin-bottom:24px;line-height:1.6">You will need to sign in again with Google to access your dashboard.</p>
-        <div style="display:flex;gap:10px">
-            <button onclick="closeLogoutModal()" style="flex:1;padding:12px;border-radius:10px;background:#1E1E2E;border:1px solid #2D2D3D;color:#E2E8F0;font-size:14px;font-weight:700;cursor:pointer">
-                ← Stay
-            </button>
-            <button onclick="window.location.href='/logout'" style="flex:1;padding:12px;border-radius:10px;background:#EF4444;border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer">
-                Yes, logout
-            </button>
-        </div>
-    </div>
-</div>
-
-<script>
+    // ── LOGOUT MODAL ──
     function confirmLogout() {
-        const modal = document.getElementById('logoutModal');
-        modal.style.display = 'flex';
+        document.getElementById('logoutModal').classList.add('show');
     }
     function closeLogoutModal() {
-        document.getElementById('logoutModal').style.display = 'none';
+        document.getElementById('logoutModal').classList.remove('show');
     }
     function closeLogoutOutside(e) {
         if (e.target === document.getElementById('logoutModal')) {
             closeLogoutModal();
         }
     }
+
+    // ── ERROR ──
+    function showError(msg) {
+        var box = document.getElementById('errorBox');
+        box.textContent = '⚠️ ' + msg;
+        box.style.display = 'block';
+    }
+    function hideError() {
+        document.getElementById('errorBox').style.display = 'none';
+    }
+
+    // ── SPLASH SCREEN ──
+    (function() {
+        var splash = document.getElementById('genifySplash');
+        if (!splash) return;
+
+        // If already shown in this browser session, skip it
+        if (sessionStorage.getItem('genify_dashboard_splash')) {
+            splash.style.display = 'none';
+            return;
+        }
+
+        // Mark as shown — won't appear again in this session
+        sessionStorage.setItem('genify_dashboard_splash', 'true');
+
+        // Show for 3 seconds, then fade out
+        setTimeout(function() {
+            splash.classList.add('fade-out');
+            setTimeout(function() { splash.style.display = 'none'; }, 600);
+        }, 3000);
+    })();
 </script>
 </body>
 </html>
