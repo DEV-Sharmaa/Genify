@@ -97,8 +97,12 @@
 <!-- NAV -->
 <nav>
     <a href="/" class="nav-logo">
-        <img src="{{ url_for('static', filename='logo.jpeg')}}" alt="Genify" style="max-width: 140px; height: auto;">
-        <div class="nav-logo-text">Genify</div>
+        <div class="sidebar-logo" style="display: flex; align-items: center; gap: 12px; padding: 16px 20px;">
+    <img src="{{ url_for('static', filename='logo.jpeg') }}" 
+         alt="Genify" 
+         style="width: 36px; height: 36px; border-radius: 10px; object-fit: cover;">
+    <span style="font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">Genify</span>
+        </div>
     </a>
     <div class="nav-links">
         <a href="/#features">Features</a>
