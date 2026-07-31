@@ -1,33 +1,55 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Genify — Login</title>
     <style>
         *{box-sizing:border-box;margin:0;padding:0}
-        body{font-family:'Segoe UI',Arial,sans-serif;background:#0A0A0F;min-height:100vh;display:flex;align-items:center;justify-content:center}
-        .card{background:#0F0F1A;border:1px solid #1E1E2E;border-radius:20px;padding:48px 40px;text-align:center;width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.4)}
+        :root{
+            --bg:#0A0B0D;
+            --bg-soft:#131418;
+            --bg-sunken:#1B1C21;
+            --border:#24262C;
+            --border-strong:#33353D;
+            --text:#EDEEF1;
+            --text-muted:#9497A3;
+            --text-faint:#5B5E68;
+            --accent:#3B6FF0;
+            --accent-2:#6E9BFF;
+            --accent-soft:#3B6FF01A;
+            --danger:#F0533B;
+            --danger-soft:#F0533B1A;
+            --ease:cubic-bezier(.4,0,.2,1);
+        }
+        body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',Arial,sans-serif;background:radial-gradient(ellipse 900px 600px at 50% 20%,#3B6FF014,transparent 70%),var(--bg);min-height:100vh;display:flex;align-items:center;justify-content:center;color:var(--text)}
+        .card{background:var(--bg-soft);border:1px solid var(--border);border-radius:20px;padding:48px 40px;text-align:center;width:420px;box-shadow:0 24px 60px rgba(0,0,0,0.5)}
         .logo{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:24px}
-        .logo-icon{width:44px;height:44px;background:linear-gradient(135deg,#4361EE,#7B2FBE);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff}
-        .logo-text{font-size:24px;font-weight:800;color:#fff;letter-spacing:-0.5px}
-        .subtitle{color:#8B8FA8;font-size:14px;margin-bottom:32px;line-height:1.6}
+        /* Logo size kept identical (32px) to the sidebar/nav logo used across
+           dashboard, landing, pricing and profile — per request, no page
+           gets a bigger or smaller logo than the others. */
+        .logo-icon{width:32px;height:32px;border-radius:8px;overflow:hidden;flex-shrink:0}
+        .logo-icon img{width:100%;height:100%;object-fit:cover;display:block}
+        .logo-text{font-size:20px;font-weight:700;color:var(--text);letter-spacing:-0.3px}
+        .subtitle{color:var(--text-muted);font-size:14px;margin-bottom:32px;line-height:1.6}
         .features{display:flex;justify-content:center;gap:24px;margin-bottom:32px}
         .feature-icon{font-size:20px}
-        .feature-text{font-size:11px;color:#8B8FA8;font-weight:600;margin-top:4px}
+        .feature-text{font-size:11px;color:var(--text-muted);font-weight:600;margin-top:4px}
         .divider{display:flex;align-items:center;gap:12px;margin-bottom:20px}
-        .divider hr{flex:1;border:none;border-top:1px solid #1E1E2E}
-        .divider span{color:#4A4A6A;font-size:13px}
-        .google-btn{width:100%;padding:14px;border:1px solid #2D2D3D;border-radius:12px;background:#1A1A2E;font-size:15px;font-weight:600;color:#E2E8F0;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:12px;transition:all .2s}
-        .google-btn:hover{background:#1E1E2E;border-color:#4361EE}
-        .google-btn:disabled{opacity:0.6;cursor:not-allowed}
-        .status{color:#8B8FA8;font-size:13px;margin-top:16px;min-height:20px}
-        .error-box{background:#EF444411;border:1px solid #EF444433;border-radius:10px;padding:12px;color:#EF4444;font-size:13px;margin-top:16px;display:none}
-        .footer-text{margin-top:28px;color:#4A4A6A;font-size:12px;line-height:1.6}
+        .divider hr{flex:1;border:none;border-top:1px solid var(--border)}
+        .divider span{color:var(--text-faint);font-size:13px}
+        .google-btn{width:100%;padding:14px;border:1px solid var(--border-strong);border-radius:12px;background:var(--bg-sunken);font-size:15px;font-weight:600;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:12px;transition:all .2s var(--ease)}
+        .google-btn:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 6px 20px -6px #3B6FF066}
+        .google-btn:disabled{opacity:0.6;cursor:not-allowed;transform:none;box-shadow:none}
+        .status{color:var(--text-muted);font-size:13px;margin-top:16px;min-height:20px}
+        .error-box{background:var(--danger-soft);border:1px solid #F0533B33;border-radius:10px;padding:12px;color:var(--danger);font-size:13px;margin-top:16px;display:none}
+        .footer-text{margin-top:28px;color:var(--text-faint);font-size:12px;line-height:1.6}
     </style>
 </head>
 <body>
 <div class="card">
     <div class="logo">
-        <div class="logo-icon">G</div>
+        <div class="logo-icon"><img src="{{ url_for('static', filename='logo.jpeg') }}" alt="Genify"></div>
         <div class="logo-text">Genify</div>
     </div>
     <p class="subtitle">AI Question Paper Generator<br>for CBSE / ICSE Coaching Institutes</p>
@@ -51,7 +73,7 @@
         <hr><span>Sign in to continue</span><hr>
     </div>
 
-    <button class="google-btn" id="googleBtn" onclick="signInWithGoogle()">
+    <button class="google-btn" id="googleBtn" onclick="loginWithGoogle()">
         <svg width="20" height="20" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -75,6 +97,9 @@
 
 <script>
     // ── CONFIG ────────────────────────────────────
+    // Kept the real, working project config here (not placeholders) —
+    // swapping these for "YOUR_API_KEY"-style placeholders would break
+    // sign-in entirely.
     firebase.initializeApp({
         apiKey:            "AIzaSyBHeVczCKIydzeIDD_r07EbxD8pUI7DMlU",
         authDomain:        "genify-a3890.firebaseapp.com",
@@ -90,7 +115,7 @@
     provider.addScope('profile');
 
     // ── SIGN IN ───────────────────────────────────
-    async function signInWithGoogle() {
+    async function loginWithGoogle() {
         const btn    = document.getElementById('googleBtn');
         const status = document.getElementById('status');
         const errBox = document.getElementById('errorBox');
@@ -105,27 +130,7 @@
             const user   = result.user;
 
             status.textContent = '✅ Signed in! Loading dashboard...';
-
-            // Send to Flask
-            const res  = await fetch('/google-login', {
-                method:  'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    name:  user.displayName || 'Teacher',
-                    email: user.email,
-                    photo: user.photoURL   || ''
-                })
-            });
-
-            const data = await res.json();
-
-            if (data.success) {
-                status.textContent = '🚀 Redirecting...';
-                window.location.href = '/dashboard';
-            } else {
-                showError('Server error. Please try again.');
-                btn.disabled = false;
-            }
+            await sendToServer(user);
 
         } catch (error) {
             console.error('Login error:', error.code, error.message);
@@ -143,28 +148,41 @@
         }
     }
 
-    // ── HANDLE REDIRECT RESULT ────────────────────
-    auth.getRedirectResult()
-    .then(async function(result) {
-        if (result && result.user) {
-            const user   = result.user;
-            const status = document.getElementById('status');
-            status.textContent = '✅ Signed in! Loading dashboard...';
-
-            const res  = await fetch('/google-login', {
+    async function sendToServer(user) {
+        const btn = document.getElementById('googleBtn');
+        try {
+            const res  = await fetch('/login/google', {
                 method:  'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
                     name:  user.displayName || 'Teacher',
                     email: user.email,
-                    photo: user.photoURL   || ''
+                    photo: user.photoURL   || '',
+                    uid:   user.uid
                 })
             });
 
             const data = await res.json();
+
             if (data.success) {
+                document.getElementById('status').textContent = '🚀 Redirecting...';
                 window.location.href = '/dashboard';
+            } else {
+                showError('Server error. Please try again.');
+                btn.disabled = false;
             }
+        } catch (err) {
+            showError('Could not reach the server. Check your connection and try again.');
+            btn.disabled = false;
+        }
+    }
+
+    // ── HANDLE REDIRECT RESULT ────────────────────
+    auth.getRedirectResult()
+    .then(async function(result) {
+        if (result && result.user) {
+            document.getElementById('status').textContent = '✅ Signed in! Loading dashboard...';
+            await sendToServer(result.user);
         }
     })
     .catch(function(err) {

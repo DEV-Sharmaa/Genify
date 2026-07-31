@@ -4,92 +4,119 @@
     <title>Genify — Pricing</title>
     <style>
         *{box-sizing:border-box;margin:0;padding:0}
-        body{font-family:'Segoe UI',Arial,sans-serif;background:#0A0A0F;color:#E2E8F0;min-height:100vh}
-        nav{display:flex;align-items:center;justify-content:space-between;padding:0 60px;height:64px;border-bottom:1px solid #1E1E2E;background:rgba(10,10,15,0.95);backdrop-filter:blur(12px);position:sticky;top:0;z-index:100}
+        :root{
+            --bg:#0A0B0D;
+            --bg-soft:#131418;
+            --bg-sunken:#1B1C21;
+            --border:#24262C;
+            --border-strong:#33353D;
+            --text:#EDEEF1;
+            --text-muted:#9497A3;
+            --text-faint:#5B5E68;
+            --accent:#3B6FF0;
+            --accent-2:#6E9BFF;
+            --accent-soft:#3B6FF01A;
+            --accent-soft-strong:#3B6FF02E;
+            --success:#2FB866;
+            --success-soft:#2FB8661A;
+            --warning:#E0A72E;
+            --warning-soft:#E0A72E1A;
+            --danger:#F0533B;
+            --ease:cubic-bezier(.4,0,.2,1);
+        }
+        body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+        nav{display:flex;align-items:center;justify-content:space-between;padding:0 60px;height:64px;border-bottom:1px solid var(--border);background:rgba(10,11,13,0.85);backdrop-filter:blur(12px);position:sticky;top:0;z-index:100}
         .nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
-        .nav-logo-icon{width:32px;height:32px;background:linear-gradient(135deg,#4361EE,#7B2FBE);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff}
-        .nav-logo-text{font-size:18px;font-weight:800;color:#fff}
+        /* 32px everywhere — same size as the sidebar logo on dashboard/profile
+           and the nav logo on landing, so nothing looks bigger or smaller
+           from page to page. */
+        .nav-logo-icon{width:32px;height:32px;border-radius:8px;overflow:hidden;flex-shrink:0}
+        .nav-logo-icon img{width:100%;height:100%;object-fit:cover;display:block}
+        .nav-logo-text{font-size:18px;font-weight:700;color:var(--text)}
         .nav-links{display:flex;align-items:center;gap:28px}
-        .nav-links a{color:#8B8FA8;text-decoration:none;font-size:14px;font-weight:500;transition:color .2s}
-        .nav-links a:hover,.nav-links a.active{color:#fff}
+        .nav-links a{color:var(--text-muted);text-decoration:none;font-size:14px;font-weight:500;transition:color .15s var(--ease);position:relative;padding-bottom:2px}
+        .nav-links a::after{content:'';position:absolute;left:0;bottom:0;width:0;height:1.5px;background:var(--accent);transition:width .2s var(--ease)}
+        .nav-links a:hover::after,.nav-links a.active::after{width:100%}
+        .nav-links a:hover,.nav-links a.active{color:var(--text)}
         .nav-btns{display:flex;gap:10px;align-items:center}
-        .btn-outline{padding:8px 18px;border:1px solid #2D2D3D;border-radius:8px;color:#E2E8F0;text-decoration:none;font-size:14px;font-weight:600;transition:all .2s}
-        .btn-outline:hover{border-color:#4361EE;color:#4361EE}
-        .btn-primary{padding:8px 18px;border-radius:8px;background:linear-gradient(135deg,#4361EE,#7B2FBE);color:#fff;text-decoration:none;font-size:14px;font-weight:600;border:none;cursor:pointer}
+        .btn-outline{padding:8px 18px;border:1px solid var(--border-strong);border-radius:8px;color:var(--text);text-decoration:none;font-size:14px;font-weight:600;transition:all .15s var(--ease)}
+        .btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+        .btn-primary{padding:8px 18px;border-radius:8px;background:var(--accent);color:#fff;text-decoration:none;font-size:14px;font-weight:600;border:none;cursor:pointer;transition:filter .15s var(--ease)}
+        .btn-primary:hover{filter:brightness(1.1)}
         .hero{text-align:center;padding:64px 20px 40px}
-        .hero h1{font-size:40px;font-weight:900;color:#fff;letter-spacing:-1px;margin-bottom:12px}
-        .hero h1 span{background:linear-gradient(135deg,#4361EE,#7B2FBE);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-        .hero p{font-size:16px;color:#8B8FA8;max-width:480px;margin:0 auto}
+        .hero h1{font-size:40px;font-weight:800;color:var(--text);letter-spacing:-1px;margin-bottom:12px}
+        .hero h1 span{background:linear-gradient(135deg,var(--accent),var(--accent-2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .hero p{font-size:16px;color:var(--text-muted);max-width:480px;margin:0 auto}
         .toggle-wrap{display:flex;align-items:center;justify-content:center;gap:12px;margin:28px 0}
-        .toggle-label{font-size:14px;font-weight:600;color:#4A4A6A;transition:color .2s}
-        .toggle-label.on{color:#E2E8F0}
-        .toggle{width:48px;height:26px;border-radius:13px;background:#4361EE;border:none;cursor:pointer;position:relative;flex-shrink:0}
-        .toggle-dot{width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:3px;left:3px;transition:left .25s}
+        .toggle-label{font-size:14px;font-weight:600;color:var(--text-faint);transition:color .2s var(--ease)}
+        .toggle-label.on{color:var(--text)}
+        .toggle{width:48px;height:26px;border-radius:13px;background:var(--accent);border:none;cursor:pointer;position:relative;flex-shrink:0}
+        .toggle-dot{width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:3px;left:3px;transition:left .25s var(--ease)}
         .toggle.yearly .toggle-dot{left:25px}
-        .save-pill{background:#27AE6022;color:#27AE60;border:1px solid #27AE6033;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;display:none}
+        .save-pill{background:var(--success-soft);color:var(--success);border:1px solid #2FB86633;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;display:none}
         .save-pill.show{display:inline-block}
         .plans-wrap{max-width:980px;margin:0 auto;padding:0 20px 60px}
         .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start}
-        .plan{background:#0F0F1A;border:1px solid #1E1E2E;border-radius:16px;padding:28px;position:relative;margin-top:16px;cursor:pointer;transition:transform .2s,border-color .2s,box-shadow .2s}
-.plan:hover{transform:translateY(-6px);border-color:#4361EE;box-shadow:0 8px 32px rgba(67,97,238,0.15)}
-.plan.featured{border:2px solid #4361EE}
-.plan.featured:hover{transform:translateY(-6px);box-shadow:0 8px 32px rgba(67,97,238,0.3)}
-        .popular-tag{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#4361EE,#7B2FBE);color:#fff;font-size:11px;font-weight:700;padding:4px 14px;border-radius:20px;white-space:nowrap}
-        .basic-tag{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:#F59E0B22;color:#F59E0B;border:1px solid #F59E0B44;font-size:11px;font-weight:700;padding:4px 14px;border-radius:20px;white-space:nowrap}
-        .plan-name{font-size:13px;font-weight:700;color:#8B8FA8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
-        .plan-price{font-size:36px;font-weight:900;color:#fff;letter-spacing:-1px;line-height:1;margin-bottom:4px}
-        .plan-price span{font-size:15px;color:#8B8FA8;font-weight:400}
-        .plan-per-year{font-size:12px;color:#4A4A6A;margin-bottom:8px;min-height:18px}
-        .plan-desc{font-size:13px;color:#8B8FA8;line-height:1.6;margin-bottom:20px;min-height:52px}
-        .plan-divider{border:none;border-top:1px solid #1E1E2E;margin-bottom:20px}
+        .plan{background:var(--bg-soft);border:1px solid var(--border);border-radius:16px;padding:28px;position:relative;margin-top:16px;cursor:pointer;transition:transform .2s var(--ease),border-color .2s var(--ease),box-shadow .2s var(--ease)}
+        .plan:hover{transform:translateY(-6px);border-color:var(--accent);box-shadow:0 8px 32px -8px #3B6FF04D}
+        .plan.featured{border:2px solid var(--accent)}
+        .plan.featured:hover{transform:translateY(-6px);box-shadow:0 12px 36px -8px #3B6FF066}
+        .popular-tag{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;font-size:11px;font-weight:700;padding:4px 14px;border-radius:20px;white-space:nowrap}
+        .basic-tag{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--warning-soft);color:var(--warning);border:1px solid #E0A72E44;font-size:11px;font-weight:700;padding:4px 14px;border-radius:20px;white-space:nowrap}
+        .plan-name{font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
+        .plan-price{font-size:36px;font-weight:800;color:var(--text);letter-spacing:-1px;line-height:1;margin-bottom:4px}
+        .plan-price span{font-size:15px;color:var(--text-muted);font-weight:400}
+        .plan-per-year{font-size:12px;color:var(--text-faint);margin-bottom:8px;min-height:18px}
+        .plan-desc{font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:20px;min-height:52px}
+        .plan-divider{border:none;border-top:1px solid var(--border);margin-bottom:20px}
         .features{display:flex;flex-direction:column;gap:11px;margin-bottom:24px}
         .feat{display:flex;align-items:flex-start;gap:9px;font-size:13px;line-height:1.45}
-        .feat-yes{color:#27AE60;flex-shrink:0;margin-top:1px}
-        .feat-up{color:#4361EE;flex-shrink:0;margin-top:1px;font-size:12px}
-        .feat-txt{color:#E2E8F0}
-        .feat-txt.soft{color:#4A4A6A}
-        .plan-cta{width:100%;padding:13px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;border:none;text-align:center;display:block;text-decoration:none}
-        .cta-ghost{background:#1E1E2E;color:#E2E8F0}
-        .cta-ghost:hover{background:#2D2D3D}
-        .cta-filled{background:linear-gradient(135deg,#4361EE,#7B2FBE);color:#fff;box-shadow:0 4px 16px rgba(67,97,238,0.3)}
-        .cta-filled:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(67,97,238,0.4)}
+        .feat-yes{color:var(--success);flex-shrink:0;margin-top:1px}
+        .feat-up{color:var(--accent);flex-shrink:0;margin-top:1px;font-size:12px}
+        .feat-txt{color:var(--text)}
+        .feat-txt.soft{color:var(--text-faint)}
+        .plan-cta{width:100%;padding:13px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s var(--ease);border:none;text-align:center;display:block;text-decoration:none}
+        .cta-ghost{background:var(--bg-sunken);color:var(--text)}
+        .cta-ghost:hover{background:var(--border)}
+        .cta-filled{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;box-shadow:0 4px 20px -4px #3B6FF055}
+        .cta-filled:hover{transform:translateY(-1px);box-shadow:0 8px 26px -4px #3B6FF077}
         .value-row{display:flex;justify-content:center;gap:28px;flex-wrap:wrap;padding:0 20px 48px;max-width:960px;margin:0 auto}
-        .value{display:flex;align-items:center;gap:8px;font-size:13px;color:#8B8FA8}
+        .value{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted)}
         .faq-wrap{max-width:640px;margin:0 auto;padding:0 20px 80px}
-        .faq-title{font-size:22px;font-weight:800;color:#fff;text-align:center;letter-spacing:-0.5px;margin-bottom:28px}
-        .faq-item{border-top:1px solid #1E1E2E;padding:18px 0;cursor:pointer}
-        .faq-item:last-child{border-bottom:1px solid #1E1E2E}
-        .faq-q{display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:600;color:#E2E8F0}
-        .faq-arrow{color:#4A4A6A;transition:transform .2s;font-size:16px}
-        .faq-a{font-size:13px;color:#8B8FA8;line-height:1.7;margin-top:12px;display:none}
+        .faq-title{font-size:22px;font-weight:800;color:var(--text);text-align:center;letter-spacing:-0.5px;margin-bottom:28px}
+        .faq-item{border-top:1px solid var(--border);padding:18px 0;cursor:pointer}
+        .faq-item:last-child{border-bottom:1px solid var(--border)}
+        .faq-q{display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:600;color:var(--text)}
+        .faq-arrow{color:var(--text-faint);transition:transform .2s var(--ease);font-size:16px}
+        .faq-a{font-size:13px;color:var(--text-muted);line-height:1.7;margin-top:12px;display:none}
         .faq-item.open .faq-arrow{transform:rotate(180deg)}
         .faq-item.open .faq-a{display:block}
-        .whatsapp-section{background:#0F0F1A;border:1px solid #1E1E2E;border-radius:16px;padding:32px;text-align:center;max-width:500px;margin:0 auto 60px}
-        .whatsapp-section h3{font-size:18px;font-weight:800;color:#fff;margin-bottom:8px}
-        .whatsapp-section p{font-size:13px;color:#8B8FA8;margin-bottom:20px;line-height:1.6}
-        .whatsapp-btn{display:inline-flex;align-items:center;gap:10px;padding:13px 28px;border-radius:10px;background:#25D366;color:#fff;font-size:15px;font-weight:700;border:none;cursor:pointer;transition:all .2s;text-decoration:none}
+        .whatsapp-section{background:var(--bg-soft);border:1px solid var(--border);border-radius:16px;padding:32px;text-align:center;max-width:500px;margin:0 auto 60px}
+        .whatsapp-section h3{font-size:18px;font-weight:800;color:var(--text);margin-bottom:8px}
+        .whatsapp-section p{font-size:13px;color:var(--text-muted);margin-bottom:20px;line-height:1.6}
+        .whatsapp-btn{display:inline-flex;align-items:center;gap:10px;padding:13px 28px;border-radius:10px;background:#25D366;color:#fff;font-size:15px;font-weight:700;border:none;cursor:pointer;transition:all .2s var(--ease);text-decoration:none}
         .whatsapp-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(37,211,102,0.3)}
-        footer{border-top:1px solid #1E1E2E;padding:28px 60px;display:flex;align-items:center;justify-content:space-between}
-        .footer-logo{font-size:15px;font-weight:800;color:#fff}
+        footer{border-top:1px solid var(--border);padding:28px 60px;display:flex;align-items:center;justify-content:space-between}
+        .footer-logo{font-size:15px;font-weight:800;color:var(--text)}
         .footer-links{display:flex;gap:20px}
-        .footer-links a{color:#4A4A6A;text-decoration:none;font-size:13px}
-        .footer-copy{font-size:12px;color:#4A4A6A}
+        .footer-links a{color:var(--text-faint);text-decoration:none;font-size:13px}
+        .footer-copy{font-size:12px;color:var(--text-faint)}
 
         /* ── MODAL ── */
-        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center}
+        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(6,7,9,0.65);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center}
         .modal-overlay.show{display:flex}
-        .modal{background:#0F0F1A;border:1px solid #2D2D3D;border-radius:20px;padding:36px;max-width:440px;width:90%;text-align:center}
+        .modal{background:var(--bg-soft);border:1px solid var(--border-strong);border-radius:20px;padding:36px;max-width:440px;width:90%;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,0.5)}
         .modal-icon{font-size:36px;margin-bottom:14px}
-        .modal h2{font-size:20px;font-weight:800;color:#fff;margin-bottom:8px}
-        .modal p{font-size:13px;color:#8B8FA8;margin-bottom:20px;line-height:1.6}
-        .modal-steps{text-align:left;background:#1A1A2E;border-radius:10px;padding:16px 20px;margin-bottom:20px}
-        .modal-step{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;font-size:13px;color:#E2E8F0}
+        .modal h2{font-size:20px;font-weight:800;color:var(--text);margin-bottom:8px}
+        .modal p{font-size:13px;color:var(--text-muted);margin-bottom:20px;line-height:1.6}
+        .modal-steps{text-align:left;background:var(--bg-sunken);border-radius:10px;padding:16px 20px;margin-bottom:20px}
+        .modal-step{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;font-size:13px;color:var(--text)}
         .modal-step:last-child{margin-bottom:0}
-        .step-num{width:22px;height:22px;border-radius:50%;background:#4361EE;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
-        .modal-wa-btn{width:100%;padding:13px;border-radius:10px;background:#25D366;color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer;margin-bottom:10px;transition:all .2s}
+        .step-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+        .modal-wa-btn{width:100%;padding:13px;border-radius:10px;background:#25D366;color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer;margin-bottom:10px;transition:all .2s var(--ease)}
         .modal-wa-btn:hover{transform:translateY(-1px)}
-        .modal-close-btn{width:100%;padding:10px;border-radius:10px;background:transparent;border:1px solid #2D2D3D;color:#8B8FA8;font-size:14px;cursor:pointer}
-        .modal-close-btn:hover{background:#1E1E2E}
+        .modal-close-btn{width:100%;padding:10px;border-radius:10px;background:transparent;border:1px solid var(--border-strong);color:var(--text-muted);font-size:14px;cursor:pointer}
+        .modal-close-btn:hover{background:var(--bg-sunken)}
     </style>
 </head>
 <body>
@@ -97,12 +124,8 @@
 <!-- NAV -->
 <nav>
     <a href="/" class="nav-logo">
-        <div class="sidebar-logo" style="display: flex; align-items: center; gap: 12px; padding: 16px 20px;">
-    <img src="{{ url_for('static', filename='logo.jpeg') }}" 
-         alt="Genify" 
-         style="width: 36px; height: 36px; border-radius: 10px; object-fit: cover;">
-    <span style="font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">Genify</span>
-        </div>
+        <div class="nav-logo-icon"><img src="{{ url_for('static', filename='logo.jpeg') }}" alt="Genify"></div>
+        <span class="nav-logo-text">Genify</span>
     </a>
     <div class="nav-links">
         <a href="/#features">Features</a>
@@ -111,7 +134,7 @@
     </div>
     <div class="nav-btns">
         {% if user %}
-            <span style="font-size:13px;color:#8B8FA8">👋 {{ user.name.split()[0] }}</span>
+            <span style="font-size:13px;color:var(--text-muted)">👋 {{ user.name.split()[0] }}</span>
             <a href="/dashboard" class="btn-primary">Dashboard</a>
         {% else %}
             <a href="/login" class="btn-outline">Log in</a>
@@ -141,7 +164,7 @@
     <div class="plans">
 
         <!-- FREE -->
-        <div class="plan" onclick="window.location.href='/login'"style="cursor:pointer">
+        <div class="plan" onclick="window.location.href='/login'" style="cursor:pointer">
             <div class="plan-name">Free</div>
             <div class="plan-price">₹0 <span>/ month</span></div>
             <div class="plan-per-year"></div>
