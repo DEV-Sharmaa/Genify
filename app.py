@@ -1,11 +1,13 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file
 from datetime import timedelta, datetime
-import google.generativeai as genai
+import requests
 import sqlite3
 import base64
 import os
 import re
 import io
+import gc
+import json
 from fpdf import FPDF
 
 # ── CONFIG ───────────────────────────────────────
@@ -13,8 +15,13 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 if not GEMINI_API_KEY:
     print("⚠️  WARNING: GEMINI_API_KEY not set. Paper generation will fail.")
 
-genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel("gemini-2.0-flash")
+# Using the REST API directly instead of the google-generativeai SDK.
+# The SDK pulls in grpcio, which is heavy (channel + thread pool overhead)
+# and is the main reason the app was getting SIGKILL'd on Render's 512MB
+# free tier. Plain HTTPS requests avoid that entirely.
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.6-flash")
+GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta"
+GEMINI_TIMEOUT_SECS = int(os.environ.get("GEMINI_TIMEOUT_SECS", "120"))
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "change-this-in-production-immediately")
@@ -23,8 +30,27 @@ app.config["SESSION_COOKIE_SECURE"] = False
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
+# Reject oversized uploads at the Flask/Werkzeug layer, before the file
+# is ever read into memory. This is the biggest lever for capping peak
+# RAM per request on a 512MB instance.
+MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", "15"))
+app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
+
 DB_PATH = os.path.join(os.path.dirname(__file__), "genify.db")
 ADMIN_KEY = os.environ.get("ADMIN_KEY", "genify2024")
+
+# ── FIREBASE CLOUD STORAGE ───────────────────────
+# Set these two env vars on Render to turn on cloud saving of every
+# generated PDF. Left unset, the app just skips cloud save silently —
+# your own download always works either way.
+#   FIREBASE_STORAGE_BUCKET     e.g. genify-a3890.firebasestorage.app
+#   FIREBASE_SERVICE_ACCOUNT_JSON   the full contents of a Firebase
+#     service-account JSON key, pasted as a single-line env var value
+#     (Firebase console → Project settings → Service accounts →
+#     Generate new private key). Kept as an env var, not a file, since
+#     Render's free-tier disk is ephemeral and wiped on every deploy.
+FIREBASE_STORAGE_BUCKET = os.environ.get("FIREBASE_STORAGE_BUCKET", "")
+FIREBASE_SERVICE_ACCOUNT_JSON = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON", "")
 
 FREE_PAPER_LIMIT = 5
 STARTER_MONTHLY_LIMIT = 30
@@ -60,6 +86,91 @@ def init_db():
             default_language TEXT DEFAULT 'English'
         )
     """)
+    # Metadata for every PDF that gets uploaded to Firebase Storage —
+    # lets you list/re-download a teacher's past papers later without
+    # storing the PDFs themselves anywhere on Render's ephemeral disk.
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS papers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_email TEXT NOT NULL,
+            subject TEXT,
+            class TEXT,
+            marks TEXT,
+            storage_path TEXT,
+            download_url TEXT,
+            created_at TEXT
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+
+# ── FIREBASE CLOUD STORAGE HELPERS ──────────────
+_storage_bucket = None  # lazily built, cached after first successful init
+
+
+def get_firebase_bucket():
+    """
+    Lazily builds a google-cloud-storage bucket handle from a service
+    account JSON stored in an env var — no credentials file needed on
+    disk, so this works cleanly on Render's ephemeral filesystem.
+
+    Deliberately uses google-cloud-storage directly instead of the
+    firebase-admin SDK: firebase-admin pulls in grpcio transitively
+    (via its Firestore module) even when you only touch Storage, which
+    would reintroduce the exact memory problem the Gemini REST switch
+    was meant to fix. google-cloud-storage is plain REST/HTTPS.
+
+    Returns None (never raises) if not configured or if init fails —
+    callers must treat cloud save as optional, not required.
+    """
+    global _storage_bucket
+    if _storage_bucket is not None:
+        return _storage_bucket
+    if not FIREBASE_STORAGE_BUCKET or not FIREBASE_SERVICE_ACCOUNT_JSON:
+        return None
+    try:
+        from google.cloud import storage
+        from google.oauth2 import service_account
+
+        info = json.loads(FIREBASE_SERVICE_ACCOUNT_JSON)
+        creds = service_account.Credentials.from_service_account_info(info)
+        client = storage.Client(credentials=creds, project=info.get("project_id"))
+        _storage_bucket = client.bucket(FIREBASE_STORAGE_BUCKET)
+        return _storage_bucket
+    except Exception as e:
+        print(f"⚠️  Firebase Storage unavailable, skipping cloud save: {e}")
+        return None
+
+
+def upload_pdf_to_firebase(pdf_bytes, dest_path):
+    """
+    Uploads PDF bytes to Firebase Storage and returns a v4 signed URL
+    valid for 7 days. Returns None on any failure — this must never
+    raise, since cloud save is a bonus feature, not a requirement for
+    the user getting their own PDF.
+    """
+    bucket = get_firebase_bucket()
+    if bucket is None:
+        return None
+    try:
+        blob = bucket.blob(dest_path)
+        blob.upload_from_string(pdf_bytes, content_type="application/pdf")
+        return blob.generate_signed_url(version="v4", expiration=timedelta(days=7))
+    except Exception as e:
+        print(f"⚠️  Firebase upload failed, continuing without it: {e}")
+        return None
+
+
+def save_paper_record(email, subject, cls, marks, storage_path, download_url):
+    conn = get_db()
+    conn.execute(
+        """
+        INSERT INTO papers (user_email, subject, class, marks, storage_path, download_url, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        (normalize_email(email), subject, cls, marks, storage_path, download_url, datetime.now().isoformat()),
+    )
     conn.commit()
     conn.close()
 
@@ -245,6 +356,160 @@ def save_user_settings(email, data):
 init_db()
 
 
+@app.errorhandler(413)
+def too_large(e):
+    return jsonify({
+        "success": False,
+        "error": f"File too large. Max upload size is {MAX_UPLOAD_MB}MB."
+    }), 413
+
+
+# ── GEMINI (REST, NOT SDK) ──────────────────────
+class GeminiError(Exception):
+    """Raised for any failure talking to Gemini, with a user-safe message."""
+    pass
+
+
+def call_gemini(parts, model_name=None, timeout=None):
+    """
+    Calls the Gemini REST API directly (no grpc/google-generativeai SDK).
+    `parts` should be a list of REST-style part dicts, e.g.:
+        [{"inline_data": {"mime_type": "...", "data": "<base64>"}}, {"text": "..."}]
+    Returns the concatenated text of the response.
+    Raises GeminiError with a short, user-facing message on any failure.
+    """
+    if not GEMINI_API_KEY:
+        raise GeminiError("Server is missing its Gemini API key. Contact the site admin.")
+
+    model_name = model_name or GEMINI_MODEL
+    timeout = timeout or GEMINI_TIMEOUT_SECS
+    url = f"{GEMINI_API_BASE}/models/{model_name}:generateContent"
+
+    payload = {
+        "contents": [
+            {"role": "user", "parts": parts}
+        ],
+        "generationConfig": {
+            "temperature": 0.7,
+        },
+    }
+
+    try:
+        resp = requests.post(
+            url,
+            params={"key": GEMINI_API_KEY},
+            json=payload,
+            timeout=timeout,
+        )
+    except requests.exceptions.Timeout:
+        raise GeminiError("Gemini took too long to respond. Try again, or use a shorter PDF.")
+    except requests.exceptions.RequestException as e:
+        raise GeminiError(f"Could not reach Gemini: {e}")
+
+    if resp.status_code == 429:
+        raise GeminiError("Gemini rate limit hit. Please wait a moment and try again.")
+    if resp.status_code >= 400:
+        # Try to surface Gemini's own error message if present
+        try:
+            err_json = resp.json()
+            msg = err_json.get("error", {}).get("message", resp.text[:300])
+        except ValueError:
+            msg = resp.text[:300]
+        raise GeminiError(f"Gemini API error ({resp.status_code}): {msg}")
+
+    try:
+        data = resp.json()
+    except ValueError:
+        raise GeminiError("Gemini returned an unreadable response.")
+
+    candidates = data.get("candidates") or []
+    if not candidates:
+        # Could be blocked by safety filters, etc.
+        feedback = data.get("promptFeedback", {})
+        block_reason = feedback.get("blockReason")
+        if block_reason:
+            raise GeminiError(f"Gemini blocked this request ({block_reason}). Try a different PDF.")
+        raise GeminiError("Gemini returned no output. Try again.")
+
+    text_chunks = []
+    for cand in candidates:
+        content = cand.get("content", {}) or {}
+        for part in content.get("parts", []) or []:
+            if "text" in part:
+                text_chunks.append(part["text"])
+
+    full_text = "\n".join(text_chunks).strip()
+    if not full_text:
+        raise GeminiError("Gemini returned an empty paper. Try again.")
+
+    return clean_latex_artifacts(full_text)
+
+
+# Common LaTeX wrappers/commands Gemini sometimes emits despite the prompt
+# instruction. This is a best-effort fallback, not a full LaTeX parser —
+# it just strips the raw markup so it doesn't show up literally in the PDF.
+_LATEX_DELIMS = [
+    (r"\$\$(.+?)\$\$", r"\1"),
+    (r"\\\[(.+?)\\\]", r"\1"),
+    (r"\\\((.+?)\\\)", r"\1"),
+    (r"\$(.+?)\$", r"\1"),
+]
+_LATEX_REPLACEMENTS = [
+    (r"\\times", "×"),
+    (r"\\div", "÷"),
+    (r"\\cdot", "·"),
+    (r"\\pi", "π"),
+    (r"\\sqrt\{([^{}]*)\}", r"√\1"),
+    (r"\\frac\{([^{}]*)\}\{([^{}]*)\}", r"\1/\2"),
+    (r"\\leq", "≤"),
+    (r"\\geq", "≥"),
+    (r"\\neq", "≠"),
+    (r"\\left", ""),
+    (r"\\right", ""),
+]
+
+
+def clean_latex_artifacts(text):
+    for pattern, repl in _LATEX_DELIMS:
+        text = re.sub(pattern, repl, text, flags=re.DOTALL)
+    for pattern, repl in _LATEX_REPLACEMENTS:
+        text = re.sub(pattern, repl, text)
+    # Simple ^{2} / _{2} superscript/subscript braces left over
+    text = re.sub(r"\^\{?(\w+)\}?", r"^\1", text)
+    text = re.sub(r"_\{?(\w+)\}?", r"_\1", text)
+    return text
+
+
+def compute_section_counts(total_marks):
+    """
+    Works out how many 1-mark MCQs, 2-mark short-answer, and 5-mark
+    long-answer questions to ask for, so the paper's marks always sum
+    exactly to what the teacher picked on the slider (20-100).
+    Previously the template was hard-coded to 13 questions / 30 marks
+    no matter what was selected — this fixes that.
+    """
+    total_marks = int(total_marks)
+    mcq_marks = round(total_marks * 0.20)
+    short_marks = round(total_marks * 0.30)
+    mcq_count = max(3, round(mcq_marks / 1))
+    short_count = max(2, round(short_marks / 2))
+    remaining = total_marks - mcq_count * 1 - short_count * 2
+    long_count = max(1, round(remaining / 5))
+
+    current_total = mcq_count * 1 + short_count * 2 + long_count * 5
+    diff = total_marks - current_total
+    mcq_count += diff
+    if mcq_count < 1:
+        # Only possible at very small totals — pull the shortfall from
+        # the long-answer section instead so nothing goes negative.
+        long_count = max(1, long_count + (mcq_count - 1))
+        mcq_count = 1
+        current_total = mcq_count * 1 + short_count * 2 + long_count * 5
+        mcq_count += total_marks - current_total
+
+    return mcq_count, short_count, long_count
+
+
 # ── PDF GENERATION HELPER ───────────────────────
 def generate_question_paper_pdf(paper_text, subject="Subject", cls="Class", marks="40"):
     """
@@ -365,12 +630,13 @@ def login():
     return render_template("login.html")
 
 
-@app.route("/google-login", methods=["POST"])
+@app.route("/login/google", methods=["POST"])
 def google_login():
     data = request.json or {}
     email = data.get("email", "").strip()
     name = data.get("name", "Teacher").strip()
     photo = data.get("photo", "")
+    uid = data.get("uid", "")  # Firebase UID — accepted but not persisted yet (see note below)
 
     if not email:
         return jsonify({"success": False, "error": "Email required"})
@@ -378,6 +644,7 @@ def google_login():
     db_user = get_or_create_user(email, name, photo)
     session.permanent = True
     session["user"] = row_to_session(db_user)
+    session["user"]["uid"] = uid  # available this request; dropped on next refresh_session_user()
     session.modified = True
     return jsonify({"success": True})
 
@@ -451,12 +718,64 @@ def generate():
         institute = (db_user.get("institute_name") or "").strip()
         header_line = institute if (user_is_pro and institute) else "GENIFY — QUESTION PAPER"
 
-        prompt = f"""You are an expert CBSE/ICSE teacher.
-Generate a complete question paper in {out_lang}.
+        # Scale question counts so the paper's marks always sum to exactly
+        # what was picked on the slider, instead of a fixed 13-question
+        # skeleton regardless of the target.
+        mcq_count, short_count, long_count = compute_section_counts(marks)
+
+        def numbered_lines(start, count, mark_value, with_options):
+            lines = []
+            for i in range(count):
+                line = f"Q{start + i}. [question] [{mark_value}]"
+                lines.append(line)
+                if with_options:
+                    lines.append("    (a) option  (b) option  (c) option  (d) option")
+            return "\n".join(lines)
+
+        section_a = numbered_lines(1, mcq_count, 1, with_options=True)
+        section_b = numbered_lines(mcq_count + 1, short_count, 2, with_options=False)
+        section_c = numbered_lines(mcq_count + short_count + 1, long_count, 5, with_options=False)
+
+        prompt = f"""You are a senior CBSE/ICSE examiner with 15+ years of experience setting
+official board-standard question papers. Generate a complete, exam-ready
+question paper in {out_lang} based strictly on the uploaded chapter content.
 
 Subject: {subject} | Class: {cls} | Difficulty: {difficulty} | Total Marks: {marks}
 
-Format EXACTLY like this:
+QUALITY BAR — this paper represents a paying institute's brand to its
+students, so it must read as genuinely professional, not generic or
+filler:
+- Every question must be directly answerable from the uploaded chapter —
+  never invent facts, numbers, or topics absent from the source material.
+- No two questions may test the same fact or concept — each question
+  must probe something distinct from the chapter.
+- MCQ distractors (wrong options) must be plausible, not obviously silly
+  or unrelated — they should reflect common student misconceptions.
+- Match the stated difficulty honestly: "easy" means direct recall,
+  "medium" means applying a concept, "hard" means multi-step reasoning
+  or analysis — do not label recall questions as "hard" or vice versa.
+- Vary question phrasing naturally (definitions, fill-in-the-blank style,
+  scenario-based, "which of the following", etc.) rather than repeating
+  the same sentence structure for every question in a section.
+
+CRITICAL FORMATTING RULE: This paper will be rendered as plain text, NOT LaTeX
+or Markdown. Never use LaTeX commands or math-mode syntax anywhere — no
+\\frac, \\sqrt, \\times, \\cdot, \\pi, \\left, \\right, ^{{}}, _{{}}, and no
+$ or \\( \\) \\[ \\] delimiters. Write every mathematical expression using
+plain Unicode characters instead, for example: × (multiply), ÷ (divide),
+√ (root), π (pi), ² ³ (superscripts), ½ ¾ (fractions), ≤ ≥ ≠ (comparisons).
+Example — write "a² + b² = c²", NOT "$a^2 + b^2 = c^2$" or "\\(a^{{2}}\\)".
+
+LANGUAGE RULE: Even when writing the paper in Hindi, keep every structural
+marker in this template EXACTLY as shown in English — "SECTION A",
+"SECTION B", "SECTION C", "General Instructions", "Q1.", "(a) (b) (c) (d)",
+"*** END OF PAPER ***", "ANSWER KEY (FOR TEACHERS ONLY)" must never be
+translated or transliterated. Only the actual question text, options, and
+instruction sentences get written in Hindi. This keeps the paper's layout
+identical and correctly formatted in both languages.
+
+Format EXACTLY like this — do not add, remove, merge, or reorder sections,
+and do not change how many questions are in each section:
 
 ══════════════════════════════════════════
             {header_line}
@@ -467,32 +786,17 @@ Format EXACTLY like this:
 
 General Instructions:
 1. All questions are compulsory.
-2. Marks for each question are in brackets.
-3. Write neat and clean answers.
+2. Marks for each question are indicated in brackets.
+3. Read each question carefully before answering.
 
 SECTION A — Multiple Choice Questions (1 mark each)
-Q1. [question] [1]
-    (a) option  (b) option  (c) option  (d) option
-Q2. [question] [1]
-    (a) option  (b) option  (c) option  (d) option
-Q3. [question] [1]
-    (a) option  (b) option  (c) option  (d) option
-Q4. [question] [1]
-    (a) option  (b) option  (c) option  (d) option
-Q5. [question] [1]
-    (a) option  (b) option  (c) option  (d) option
+{section_a}
 
 SECTION B — Short Answer Questions (2 marks each)
-Q6.  [question] [2]
-Q7.  [question] [2]
-Q8.  [question] [2]
-Q9.  [question] [2]
-Q10. [question] [2]
+{section_b}
 
 SECTION C — Long Answer Questions (5 marks each)
-Q11. [question] [5]
-Q12. [question] [5]
-Q13. [question] [5]
+{section_c}
 
 ══════════════════════════════════════════
             *** END OF PAPER ***
@@ -506,7 +810,11 @@ After the paper, add:
 ══════════════════════════════════════════
             ANSWER KEY (FOR TEACHERS ONLY)
 ══════════════════════════════════════════
-Provide concise answers for every question.
+Provide a concise, correct answer for every single question above, in the
+same order (Q1, Q2, Q3...). For MCQs, state the correct option letter and
+a one-line reason. For short/long answer questions, give a model answer
+of appropriate length for the marks allotted — not a one-word answer for
+a 5-mark question.
 """
 
         prompt += "\nBase all questions strictly on the uploaded chapter content."
@@ -519,20 +827,30 @@ Provide concise answers for every question.
             {"text": prompt},
         ]
 
-        response = model.generate_content(parts)
+        # Free the raw bytes/base64 copy as soon as possible — on a 512MB
+        # instance, holding both alongside the outgoing request body adds up.
+        del pdf_bytes, pdf_b64
+
+        paper_text = call_gemini(parts)
+        del parts
+        gc.collect()  # nudge the interpreter to release the freed buffers now
+
         increment_usage(db_user["email"])
         user = refresh_session_user()
 
         return jsonify({
             "success": True,
-            "paper": response.text,
+            "paper": paper_text,
             "papers_used": user["papers"],
             "papers_left": user["papers_left"],
             "plan": user["plan"],
         })
 
+    except GeminiError as e:
+        # Known, user-facing Gemini failure — don't count it as a used paper
+        return jsonify({"success": False, "error": str(e)}), 502
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 # ── NEW: DOWNLOAD GENERATED PAPER AS PDF ────────
@@ -562,6 +880,24 @@ def download_paper():
         safe_cls = re.sub(r'[^\w\s-]', '', cls).strip().replace(" ", "_")
         filename = f"genify_{safe_subject}_{safe_cls}_{marks}marks.pdf"
 
+        # ── Save a copy to Firebase Storage (best-effort) ──
+        # This is the exact moment the PDF is created, so it's the right
+        # place to hook a cloud save. Wrapped so any Firebase problem
+        # (missing config, network hiccup, bad credentials) never breaks
+        # the user's own download — they always get their file either way.
+        try:
+            email = session["user"]["email"]
+            dest_path = (
+                f"papers/{normalize_email(email)}/"
+                f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
+            )
+            download_url = upload_pdf_to_firebase(pdf_stream.getvalue(), dest_path)
+            if download_url:
+                save_paper_record(email, subject, cls, marks, dest_path, download_url)
+        except Exception as e:
+            print(f"⚠️  Cloud save skipped: {e}")
+
+        pdf_stream.seek(0)  # rewind — getvalue() above doesn't move the read position, but be explicit
         return send_file(
             pdf_stream,
             mimetype="application/pdf",
@@ -570,7 +906,7 @@ def download_paper():
         )
 
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 @app.route("/save-settings", methods=["POST"])
@@ -610,6 +946,12 @@ def add_pro():
         PRO_USERS.append(email)
 
     return f"✅ {email} upgraded to {plan}. No restart needed."
+
+
+# ── HEALTH CHECK (handy for Render) ─────────────
+@app.route("/health")
+def health():
+    return jsonify({"status": "ok"})
 
 
 if __name__ == "__main__":
