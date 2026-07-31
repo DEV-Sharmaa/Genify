@@ -3,3 +3,4 @@ gunicorn==22.0.0
 requests==2.32.3
 fpdf2==2.8.1
 google-cloud-storage==2.18.2
+google-generativeai
