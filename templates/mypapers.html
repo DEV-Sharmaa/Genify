@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Genify — My Papers</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%233B6FF0'/><text x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='18' font-weight='bold' font-family='sans-serif'>G</text></svg>">
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        :root{
+            --bg:#0A0B0D;
+            --bg-soft:#131418;
+            --bg-sunken:#1B1C21;
+            --border:#24262C;
+            --border-strong:#33353D;
+            --text:#EDEEF1;
+            --text-muted:#9497A3;
+            --text-faint:#5B5E68;
+            --accent:#3B6FF0;
+            --accent-2:#6E9BFF;
+            --accent-soft:#3B6FF01A;
+            --accent-soft-strong:#3B6FF02E;
+            --success:#2FB866;
+            --success-soft:#2FB8661A;
+            --warning:#E0A72E;
+            --warning-soft:#E0A72E1A;
+            --danger:#F0533B;
+            --danger-soft:#F0533B1A;
+            --ease:cubic-bezier(.4,0,.2,1);
+        }
+        body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+        .layout{display:flex;min-height:100vh}
+
+        /* ── SIDEBAR (identical to dashboard/profile) ── */
+        .sidebar{width:240px;background:var(--bg-soft);border-right:1px solid var(--border);padding:20px 0;position:fixed;height:100vh;display:flex;flex-direction:column;z-index:50;transition:transform .3s}
+        .sidebar-logo{display:flex;align-items:center;gap:10px;padding:0 20px 24px;border-bottom:1px solid var(--border)}
+        .sidebar-logo-icon{width:32px;height:32px;border-radius:8px;overflow:hidden;flex-shrink:0}
+        .sidebar-logo-icon img{width:100%;height:100%;object-fit:cover;display:block}
+        .sidebar-logo-text{font-size:17px;font-weight:700;color:var(--text)}
+        .sidebar-nav{padding:16px 12px;flex:1;display:flex;flex-direction:column;gap:4px}
+        .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:var(--text-muted);text-decoration:none;font-size:14px;font-weight:500;transition:background .15s var(--ease),color .15s var(--ease),transform .15s var(--ease);position:relative;overflow:hidden}
+        .nav-item::before{content:'';position:absolute;left:0;top:50%;width:3px;height:0;background:var(--accent);border-radius:0 3px 3px 0;transform:translateY(-50%);transition:height .2s var(--ease)}
+        .nav-item .nav-icon{display:inline-block;transition:transform .15s var(--ease)}
+        .nav-item:hover{background:var(--bg-sunken);color:var(--text);transform:translateX(2px)}
+        .nav-item:hover .nav-icon{transform:scale(1.12)}
+        .nav-item:hover::before{height:60%}
+        .nav-item.active{background:var(--bg-sunken);color:var(--text)}
+        .nav-item.active::before{height:60%}
+        .nav-item.nav-danger{color:var(--danger)}
+        .nav-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);margin-left:auto;flex-shrink:0;animation:navDotPulse 2s ease-in-out infinite}
+        @keyframes navDotPulse{0%,100%{opacity:1;box-shadow:0 0 0 0 #3B6FF055}50%{opacity:.7;box-shadow:0 0 0 4px #3B6FF000}}
+        .sidebar-bottom{padding:16px 12px;border-top:1px solid var(--border)}
+        .user-pill{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:var(--bg-sunken);transition:transform .15s var(--ease),box-shadow .15s var(--ease)}
+        .user-pill:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,0.3)}
+        .user-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
+        .user-name{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .user-plan{font-size:11px;color:var(--text-muted)}
+
+        .sidebar-toggle{display:none;position:fixed;top:16px;left:16px;z-index:100;width:40px;height:40px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:18px;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,0.4)}
+
+        /* ── MAIN ── */
+        .main{margin-left:240px;flex:1;padding:40px;min-height:100vh}
+        .page-title{font-size:24px;font-weight:700;color:var(--text);letter-spacing:-0.3px;margin-bottom:6px}
+        .page-sub{font-size:14px;color:var(--text-muted);margin-bottom:28px}
+
+        /* ── PAPER LIST ── */
+        .paper-card{background:var(--bg-soft);border:1px solid var(--border);border-radius:14px;padding:18px 22px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;transition:border-color .15s var(--ease),transform .15s var(--ease)}
+        .paper-card:hover{border-color:var(--border-strong);transform:translateY(-1px)}
+        .paper-info{display:flex;align-items:center;gap:14px}
+        .paper-icon{width:40px;height:40px;border-radius:10px;background:var(--accent-soft-strong);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+        .paper-title{font-size:14px;font-weight:700;color:var(--text)}
+        .paper-meta{font-size:12px;color:var(--text-muted);margin-top:2px}
+        .paper-download{padding:9px 18px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;font-size:13px;font-weight:700;text-decoration:none;transition:all .15s var(--ease);white-space:nowrap}
+        .paper-download:hover{transform:translateY(-1px);box-shadow:0 6px 20px -4px #3B6FF066}
+
+        /* ── EMPTY STATES ── */
+        .empty-state{background:var(--bg-soft);border:1px dashed var(--border-strong);border-radius:16px;padding:48px 24px;text-align:center}
+        .empty-icon{font-size:36px;margin-bottom:14px}
+        .empty-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px}
+        .empty-sub{font-size:13px;color:var(--text-muted);line-height:1.6;max-width:420px;margin:0 auto 20px}
+        .empty-cta{display:inline-block;padding:11px 24px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;font-size:14px;font-weight:700;text-decoration:none;transition:all .15s var(--ease)}
+        .empty-cta:hover{transform:translateY(-1px);box-shadow:0 6px 20px -4px #3B6FF066}
+
+        @media(max-width:768px){
+            .sidebar-toggle{display:flex}
+            .sidebar{transform:translateX(-100%)}
+            .sidebar.open{transform:translateX(0)}
+            .main{margin-left:0;padding:24px 16px;padding-top:72px}
+            .paper-card{flex-direction:column;align-items:flex-start}
+        }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">☰</button>
+
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-logo">
+            <div class="sidebar-logo-icon"><img src="{{ url_for('static', filename='logo.jpeg') }}" alt="Genify"></div>
+            <div class="sidebar-logo-text">Genify</div>
+        </div>
+        <div class="sidebar-nav">
+            <a href="/dashboard" class="nav-item"><span class="nav-icon">📄</span> Dashboard</a>
+            <a href="/my-papers" class="nav-item active"><span class="nav-icon">🗂️</span> My Papers <span class="nav-dot"></span></a>
+            <a href="/profile" class="nav-item"><span class="nav-icon">👤</span> Profile</a>
+            <a href="/pricing" class="nav-item"><span class="nav-icon">💰</span> Pricing</a>
+            <a href="/settings" class="nav-item"><span class="nav-icon">⚙️</span> Settings</a>
+            <a href="#" class="nav-item nav-danger" onclick="confirmLogout()"><span class="nav-icon">🚪</span> Logout</a>
+        </div>
+        <div class="sidebar-bottom">
+            <div class="user-pill">
+                <div class="user-avatar">{{ user.name[0] | upper if user.name else '?' }}</div>
+                <div>
+                    <div class="user-name">{{ user.name }}</div>
+                    <div class="user-plan">{{ user.plan }} plan</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="page-title">My Papers</div>
+        <div class="page-sub">Every question paper you've generated and saved to the cloud</div>
+
+        {% if not firebase_configured %}
+        <div class="empty-state">
+            <div class="empty-icon">☁️</div>
+            <div class="empty-title">Cloud saving isn't turned on yet</div>
+            <div class="empty-sub">Once Firebase Storage is configured on the server, every paper you download will automatically show up here for easy access later.</div>
+        </div>
+        {% elif not papers %}
+        <div class="empty-state">
+            <div class="empty-icon">📄</div>
+            <div class="empty-title">No papers saved yet</div>
+            <div class="empty-sub">Generate a paper and click "Download PDF" — it'll be saved here automatically so you can come back to it anytime.</div>
+            <a href="/dashboard" class="empty-cta">✨ Generate your first paper</a>
+        </div>
+        {% else %}
+            {% for p in papers %}
+            <div class="paper-card">
+                <div class="paper-info">
+                    <div class="paper-icon">📄</div>
+                    <div>
+                        <div class="paper-title">{{ p.subject }} — {{ p.class }}</div>
+                        <div class="paper-meta">{{ p.marks }} marks · {{ p.created_at.split('T')[0] if p.created_at else '' }}</div>
+                    </div>
+                </div>
+                {% if p.fresh_url %}
+                <a href="{{ p.fresh_url }}" class="paper-download" target="_blank">⬇️ Download</a>
+                {% else %}
+                <span class="paper-download" style="opacity:0.5;cursor:not-allowed">Link unavailable</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+    }
+    document.addEventListener('click', function(e) {
+        var sidebar = document.getElementById('sidebar');
+        var toggle = document.querySelector('.sidebar-toggle');
+        if (sidebar.classList.contains('open') && !sidebar.contains(e.target) && !toggle.contains(e.target)) {
+            sidebar.classList.remove('open');
+        }
+    });
+    function confirmLogout() {
+        window.location.href = '/logout';
+    }
+</script>
+</body>
+</html>

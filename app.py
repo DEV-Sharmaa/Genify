@@ -175,6 +175,36 @@ def save_paper_record(email, subject, cls, marks, storage_path, download_url):
     conn.close()
 
 
+def get_user_papers(email):
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT * FROM papers WHERE user_email = ? ORDER BY id DESC",
+        (normalize_email(email),),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def refresh_signed_url(storage_path):
+    """
+    Re-signs a storage path on the fly. Signing is a local operation done
+    with the service account's private key — no network round-trip — so
+    it's cheap to call once per saved paper on every page load, and it
+    means links never go stale even though each individual signed URL
+    expires after 7 days (only the stored storage_path is permanent).
+    Returns None if Firebase isn't configured or the path can't be signed.
+    """
+    bucket = get_firebase_bucket()
+    if bucket is None or not storage_path:
+        return None
+    try:
+        blob = bucket.blob(storage_path)
+        return blob.generate_signed_url(version="v4", expiration=timedelta(days=7))
+    except Exception as e:
+        print(f"⚠️  Could not refresh signed URL for {storage_path}: {e}")
+        return None
+
+
 def current_month_key():
     return datetime.now().strftime("%Y-%m")
 
@@ -510,6 +540,37 @@ def compute_section_counts(total_marks):
     return mcq_count, short_count, long_count
 
 
+MAX_EXTRACTED_CHARS = 40000  # ~10k tokens — plenty for one chapter, caps prompt/memory size
+
+
+def extract_pdf_text(pdf_bytes):
+    """
+    Pulls plain text out of the uploaded PDF using pypdf (pure Python,
+    no native/C dependencies, no extra memory risk on Render's tier).
+    Returns '' if the PDF has no extractable text layer (e.g. a pure
+    scan) — caller falls back to sending the raw PDF to Gemini in that
+    case, since Gemini's document vision can still often read scans.
+    """
+    try:
+        from pypdf import PdfReader
+
+        reader = PdfReader(io.BytesIO(pdf_bytes))
+        chunks = []
+        total_len = 0
+        for page in reader.pages:
+            text = page.extract_text() or ""
+            if text:
+                chunks.append(text)
+                total_len += len(text)
+            if total_len >= MAX_EXTRACTED_CHARS:
+                break
+        full_text = "\n".join(chunks).strip()
+        return full_text[:MAX_EXTRACTED_CHARS]
+    except Exception as e:
+        print(f"⚠️  PDF text extraction failed, will fall back to raw PDF: {e}")
+        return ""
+
+
 # ── PDF GENERATION HELPER ───────────────────────
 def generate_question_paper_pdf(paper_text, subject="Subject", cls="Class", marks="40"):
     """
@@ -673,6 +734,28 @@ def pricing():
     return render_template("pricing.html", user=user)
 
 
+@app.route("/my-papers")
+def my_papers():
+    if "user" not in session:
+        return redirect(url_for("login"))
+    user = refresh_session_user()
+
+    firebase_configured = get_firebase_bucket() is not None
+    papers = []
+    if firebase_configured:
+        raw_papers = get_user_papers(user["email"])
+        for p in raw_papers:
+            p["fresh_url"] = refresh_signed_url(p["storage_path"]) or p["download_url"]
+            papers.append(p)
+
+    return render_template(
+        "my_papers.html",
+        user=user,
+        papers=papers,
+        firebase_configured=firebase_configured,
+    )
+
+
 @app.route("/settings")
 def settings():
     if "user" not in session:
@@ -820,16 +903,44 @@ a 5-mark question.
         prompt += "\nBase all questions strictly on the uploaded chapter content."
 
         pdf_bytes = pdf_file.read()
-        pdf_b64 = base64.standard_b64encode(pdf_bytes).decode("utf-8")
+        chapter_text = extract_pdf_text(pdf_bytes)
 
-        parts = [
-            {"inline_data": {"mime_type": "application/pdf", "data": pdf_b64}},
-            {"text": prompt},
-        ]
+        if chapter_text:
+            # Primary path: hand Gemini the exact extracted text and forbid
+            # anything else as a source. This is far more reliable than
+            # trusting document-vision on the raw PDF — with a rigid format
+            # template like ours, the model can otherwise lean on its own
+            # training knowledge of "what a typical Class X chapter covers"
+            # instead of actually reading the file. It's also lighter on
+            # memory: plain text is smaller than a base64-encoded PDF blob.
+            grounding_notice = f"""
+════════════════════════════════════════════════════════
+SOURCE MATERIAL — the ONLY content you may draw questions from.
+Do not use outside knowledge of this subject/class/curriculum.
+If a fact, number, or definition is not in the text below, do not
+use it, even if it feels like an obvious textbook fact.
+════════════════════════════════════════════════════════
+{chapter_text}
+════════════════════════════════════════════════════════
+END OF SOURCE MATERIAL
+════════════════════════════════════════════════════════
+"""
+            full_prompt = grounding_notice + "\n" + prompt
+            parts = [{"text": full_prompt}]
+        else:
+            # Fallback: no extractable text layer (typically a scanned PDF).
+            # Send the raw file so Gemini's document vision can still try
+            # to read it — this is the old behavior, kept only as a safety net.
+            pdf_b64 = base64.standard_b64encode(pdf_bytes).decode("utf-8")
+            parts = [
+                {"inline_data": {"mime_type": "application/pdf", "data": pdf_b64}},
+                {"text": prompt},
+            ]
+            del pdf_b64
 
-        # Free the raw bytes/base64 copy as soon as possible — on a 512MB
-        # instance, holding both alongside the outgoing request body adds up.
-        del pdf_bytes, pdf_b64
+        # Free the raw bytes as soon as possible — on a 512MB instance,
+        # holding onto them alongside the outgoing request body adds up.
+        del pdf_bytes
 
         paper_text = call_gemini(parts)
         del parts
