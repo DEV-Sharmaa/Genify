@@ -5,3 +5,4 @@ fpdf2==2.8.1
 google-cloud-storage==2.18.2
 google-generativeai
 pypdf==5.1.0
+psycopg2-binary==2.9.9

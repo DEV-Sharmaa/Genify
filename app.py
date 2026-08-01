@@ -1,7 +1,8 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file
 from datetime import timedelta, datetime
 import requests
-import sqlite3
+import psycopg2
+import psycopg2.extras
 import base64
 import os
 import re
@@ -36,7 +37,13 @@ app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", "15"))
 app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "genify.db")
+# Postgres (Supabase free tier) — replaces the old local SQLite file, which
+# got wiped every time Render's free-tier instance restarted or redeployed
+# since that disk is ephemeral. Set DATABASE_URL on Render to the
+# "Transaction pooler" connection string from Supabase → Connect.
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
+if not DATABASE_URL:
+    print("⚠️  WARNING: DATABASE_URL not set. All database operations will fail.")
 ADMIN_KEY = os.environ.get("ADMIN_KEY", "genify2024")
 
 # ── FIREBASE CLOUD STORAGE ───────────────────────
@@ -63,8 +70,27 @@ PRO_USERS = [
 
 # ── DATABASE ─────────────────────────────────────
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
+    """
+    Returns a psycopg2 connection with a conn.execute(sql, params) method
+    attached, so every existing call site in this file — written against
+    sqlite3's conn.execute(...).fetchone()/.fetchall() style — keeps
+    working unchanged. Also auto-converts sqlite's "?" placeholders to
+    psycopg2's "%s", so query strings didn't need rewriting either.
+    RealDictCursor makes each row behave like a dict already, matching
+    the old sqlite3.Row + dict(row) pattern used throughout this file.
+    """
+    conn = psycopg2.connect(
+        DATABASE_URL,
+        sslmode="require",
+        cursor_factory=psycopg2.extras.RealDictCursor,
+    )
+
+    def _execute(sql, params=()):
+        cur = conn.cursor()
+        cur.execute(sql.replace("?", "%s"), params)
+        return cur
+
+    conn.execute = _execute
     return conn
 
 
@@ -91,7 +117,7 @@ def init_db():
     # storing the PDFs themselves anywhere on Render's ephemeral disk.
     conn.execute("""
         CREATE TABLE IF NOT EXISTS papers (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             user_email TEXT NOT NULL,
             subject TEXT,
             class TEXT,
@@ -383,7 +409,10 @@ def save_user_settings(email, data):
     conn.close()
 
 
-init_db()
+try:
+    init_db()
+except Exception as e:
+    print(f"⚠️  Database init failed — check DATABASE_URL on Render: {e}")
 
 
 @app.errorhandler(413)
