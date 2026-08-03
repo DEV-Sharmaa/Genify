@@ -69,29 +69,47 @@ PRO_USERS = [
 
 
 # ── DATABASE ─────────────────────────────────────
+class _DBConn:
+    """
+    Thin wrapper around a real psycopg2 connection. psycopg2's connection
+    object is a C-extension type, so you can't attach a new attribute to
+    an instance of it directly (unlike sqlite3.Connection, which is a
+    plain Python object and allowed conn.execute = ... just fine). This
+    wrapper is an ordinary Python class instead, so it supports adding
+    the execute(sql, params) convenience method every call site in this
+    file already expects, without touching those call sites.
+    """
+    def __init__(self, conn):
+        self._conn = conn
+
+    def execute(self, sql, params=()):
+        cur = self._conn.cursor()
+        cur.execute(sql.replace("?", "%s"), params)
+        return cur
+
+    def commit(self):
+        self._conn.commit()
+
+    def close(self):
+        self._conn.close()
+
+
 def get_db():
     """
-    Returns a psycopg2 connection with a conn.execute(sql, params) method
-    attached, so every existing call site in this file — written against
-    sqlite3's conn.execute(...).fetchone()/.fetchall() style — keeps
-    working unchanged. Also auto-converts sqlite's "?" placeholders to
-    psycopg2's "%s", so query strings didn't need rewriting either.
-    RealDictCursor makes each row behave like a dict already, matching
-    the old sqlite3.Row + dict(row) pattern used throughout this file.
+    Returns a _DBConn wrapping a psycopg2 connection, exposing the same
+    conn.execute(sql, params).fetchone()/.fetchall() style every call
+    site in this file was already written against for sqlite3. Also
+    auto-converts sqlite's "?" placeholders to psycopg2's "%s", so query
+    strings didn't need rewriting either. RealDictCursor makes each row
+    behave like a dict already, matching the old sqlite3.Row + dict(row)
+    pattern used throughout this file.
     """
     conn = psycopg2.connect(
         DATABASE_URL,
         sslmode="require",
         cursor_factory=psycopg2.extras.RealDictCursor,
     )
-
-    def _execute(sql, params=()):
-        cur = conn.cursor()
-        cur.execute(sql.replace("?", "%s"), params)
-        return cur
-
-    conn.execute = _execute
-    return conn
+    return _DBConn(conn)
 
 
 def init_db():
@@ -744,6 +762,8 @@ def dashboard():
     if "user" not in session:
         return redirect(url_for("login"))
     user = refresh_session_user()
+    if not user:
+        return redirect(url_for("login"))
     return render_template("dashboard.html", user=user)
 
 
@@ -752,6 +772,8 @@ def profile():
     if "user" not in session:
         return redirect(url_for("login"))
     user = refresh_session_user()
+    if not user:
+        return redirect(url_for("login"))
     return render_template("profile.html", user=user)
 
 
@@ -759,7 +781,7 @@ def profile():
 def pricing():
     user = session.get("user")
     if user:
-        user = refresh_session_user()
+        user = refresh_session_user()  # may return None if the session is stale — that's fine here, pricing.html already handles a falsy user
     return render_template("pricing.html", user=user)
 
 
@@ -768,6 +790,8 @@ def my_papers():
     if "user" not in session:
         return redirect(url_for("login"))
     user = refresh_session_user()
+    if not user:
+        return redirect(url_for("login"))
 
     firebase_configured = get_firebase_bucket() is not None
     papers = []
@@ -790,6 +814,8 @@ def settings():
     if "user" not in session:
         return redirect(url_for("login"))
     user = refresh_session_user()
+    if not user:
+        return redirect(url_for("login"))
     return render_template("settings.html", user=user)
 
 
@@ -805,6 +831,8 @@ def generate():
         return jsonify({"success": False, "error": "Not logged in"})
 
     user = refresh_session_user()
+    if not user:
+        return jsonify({"success": False, "error": "Your session has expired. Please log in again."})
     db_user = get_user_by_email(user["email"])
     ok, err = can_generate(db_user)
     if not ok:
@@ -1056,12 +1084,14 @@ def save_settings():
 
     data = request.json or {}
     email = session["user"]["email"]
+    db_user = get_user_by_email(email)
+    if not db_user:
+        session.clear()
+        return jsonify({"success": False, "error": "Your session has expired. Please log in again."})
 
     # Free users cannot save Hindi as default
-    if data.get("default_language") == "Hindi":
-        db_user = get_user_by_email(email)
-        if db_user["plan"] != "Pro":
-            data["default_language"] = "English"
+    if data.get("default_language") == "Hindi" and db_user["plan"] != "Pro":
+        data["default_language"] = "English"
 
     save_user_settings(email, data)
     refresh_session_user()
