@@ -34,7 +34,7 @@ app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 # Reject oversized uploads at the Flask/Werkzeug layer, before the file
 # is ever read into memory. This is the biggest lever for capping peak
 # RAM per request on a 512MB instance.
-MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", "15"))
+MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", "10"))
 app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
 
 # Postgres (Supabase free tier) — replaces the old local SQLite file, which
@@ -590,6 +590,9 @@ def compute_section_counts(total_marks):
 MAX_EXTRACTED_CHARS = 40000  # ~10k tokens — plenty for one chapter, caps prompt/memory size
 
 
+MAX_EXTRACTED_PAGES = 40  # most chapter PDFs are well under this — bounds parse cost on huge/complex files
+
+
 def extract_pdf_text(pdf_bytes):
     """
     Pulls plain text out of the uploaded PDF using pypdf (pure Python,
@@ -597,6 +600,12 @@ def extract_pdf_text(pdf_bytes):
     Returns '' if the PDF has no extractable text layer (e.g. a pure
     scan) — caller falls back to sending the raw PDF to Gemini in that
     case, since Gemini's document vision can still often read scans.
+
+    Capped at MAX_EXTRACTED_PAGES: pypdf parses each page's internal
+    structure (fonts, embedded objects, images) regardless of how much
+    text we keep, so an image-heavy or very long PDF can cost real
+    memory to parse even with the MAX_EXTRACTED_CHARS output cap below —
+    this page limit bounds that worst case directly.
     """
     try:
         from pypdf import PdfReader
@@ -604,7 +613,9 @@ def extract_pdf_text(pdf_bytes):
         reader = PdfReader(io.BytesIO(pdf_bytes))
         chunks = []
         total_len = 0
-        for page in reader.pages:
+        for i, page in enumerate(reader.pages):
+            if i >= MAX_EXTRACTED_PAGES:
+                break
             text = page.extract_text() or ""
             if text:
                 chunks.append(text)
@@ -612,6 +623,7 @@ def extract_pdf_text(pdf_bytes):
             if total_len >= MAX_EXTRACTED_CHARS:
                 break
         full_text = "\n".join(chunks).strip()
+        del reader, chunks
         return full_text[:MAX_EXTRACTED_CHARS]
     except Exception as e:
         print(f"⚠️  PDF text extraction failed, will fall back to raw PDF: {e}")
@@ -961,6 +973,7 @@ a 5-mark question.
 
         pdf_bytes = pdf_file.read()
         chapter_text = extract_pdf_text(pdf_bytes)
+        gc.collect()  # reclaim pypdf's internal parse structures now, not whenever Python gets around to it
 
         if chapter_text:
             # Primary path: hand Gemini the exact extracted text and forbid

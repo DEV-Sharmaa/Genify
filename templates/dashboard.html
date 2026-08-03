@@ -258,8 +258,8 @@
                 <span class="nav-icon">📄</span> Dashboard
                 <span class="nav-dot"></span>
             </a>
-            <a href="/profile" class="nav-item"><span class="nav-icon">👤</span> Profile</a>
             <a href="/my-papers" class="nav-item"><span class="nav-icon">🗂️</span> My Papers</a>
+            <a href="/profile" class="nav-item"><span class="nav-icon">👤</span> Profile</a>
             <a href="/pricing" class="nav-item"><span class="nav-icon">💰</span> Pricing</a>
             <a href="/settings" class="nav-item"><span class="nav-icon">⚙️</span> Settings</a>
             <a href="#" class="nav-item nav-danger" onclick="confirmLogout()"><span class="nav-icon">🚪</span> Logout</a>
@@ -358,7 +358,7 @@
                     ondrop="handleDrop(event)">
                     <div class="upload-icon" id="uploadIcon">📂</div>
                     <div class="upload-title" id="uploadTitle">Click to upload your chapter PDF</div>
-                    <div class="upload-sub" id="uploadSub">or drag and drop · PDF files only, up to 15MB</div>
+                    <div class="upload-sub" id="uploadSub">or drag and drop · PDF files only, up to 10MB</div>
                 </div>
                 <input type="file" id="pdfInput" accept=".pdf"
                     style="display:none" onchange="fileSelected(this)">
@@ -576,7 +576,7 @@
             return;
         }
         // Keep this in sync with MAX_UPLOAD_MB on the server (app.py).
-        const MAX_UPLOAD_MB = 15;
+        const MAX_UPLOAD_MB = 10;
         if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
             showError('That PDF is over ' + MAX_UPLOAD_MB + 'MB. Please upload a smaller file.');
             return;
@@ -598,7 +598,7 @@
         document.getElementById('uploadIcon').textContent  = '📂';
         document.getElementById('uploadTitle').textContent = 'Click to upload your chapter PDF';
         document.getElementById('uploadTitle').className   = 'upload-title';
-        document.getElementById('uploadSub').textContent   = 'or drag and drop · PDF files only, up to 15MB';
+        document.getElementById('uploadSub').textContent   = 'or drag and drop · PDF files only, up to 10MB';
         document.getElementById('genBtn').disabled = true;
         document.getElementById('pdfInput').value  = '';
     }
@@ -785,7 +785,7 @@
         document.getElementById('uploadIcon').textContent  = '📂';
         document.getElementById('uploadTitle').textContent = 'Click to upload your chapter PDF';
         document.getElementById('uploadTitle').className   = 'upload-title';
-        document.getElementById('uploadSub').textContent   = 'or drag and drop · PDF files only, up to 15MB';
+        document.getElementById('uploadSub').textContent   = 'or drag and drop · PDF files only, up to 10MB';
         document.getElementById('genBtn').disabled    = true;
         document.getElementById('genBtn').textContent = '✨ Generate Question Paper';
         document.getElementById('pdfInput').value     = '';
